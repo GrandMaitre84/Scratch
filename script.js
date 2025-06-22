@@ -7,7 +7,7 @@ const cardToBadge = {
   'card4': 'badge4'
 };
 
-// 2) Sélection de la carte du jour (cycle quotidien)
+// 2) Sélection de la carte du jour (une carte différente chaque jour)
 const todayISO    = new Date().toISOString().slice(0,10);
 const daySeed     = parseInt(todayISO.replace(/-/g,''),10);
 const currentCard = cards[ daySeed % cards.length ];
@@ -33,7 +33,6 @@ const xpText       = document.getElementById('xp-text');
 
 let drawing = false;
 
-
 // ─── Gestion du pseudo ───────────────────────────────────────────
 
 // Affiche ou cache le formulaire selon la présence d'un pseudo
@@ -49,7 +48,7 @@ function checkPseudo() {
   }
 }
 
-// Quand on clique sur Valider, on stocke et on met à jour l'affichage
+// Validation du pseudo
 pseudoBtn.addEventListener('click', () => {
   const val = pseudoInput.value.trim();
   if (!val) return;
@@ -82,31 +81,35 @@ function showTab(tab) {
   }
 }
 
-// ─── Listeners onglets & reset ──────────────────────────────────
+// Listeners onglets
 tabProfile.addEventListener('click', () => showTab('profile'));
 tabPlay.addEventListener   ('click', () => showTab('play'));
 tabBadges.addEventListener ('click', () => showTab('badges'));
 
+// Reset pour tests
 resetBtn.addEventListener('click', () => {
   localStorage.clear();
   showTab('profile');
 });
 
 
-// ─── Grattage : initialisation ───────────────────────────────────
+// ─── Initialisation du canvas de grattage ────────────────────────
 
 function initScratch() {
   const w = area.clientWidth, h = area.clientHeight;
-  canvas.width = w; canvas.height = h;
+  canvas.width = w;
+  canvas.height = h;
   ctx.globalCompositeOperation = 'source-over';
   ctx.fillStyle = '#999';
   ctx.fillRect(0,0,w,h);
   ctx.globalCompositeOperation = 'destination-out';
-  ctx.lineWidth = 30; ctx.lineCap = 'round';
+  ctx.lineWidth = 30;
+  ctx.lineCap = 'round';
 }
 window.addEventListener('resize', initScratch);
 
-// ─── Position du curseur ─────────────────────────────────────────
+
+// ─── Récupération de la position du curseur ──────────────────────
 
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
@@ -117,7 +120,7 @@ function getPos(e) {
 }
 
 
-// ─── Limite un scratch/jour & affichage REWARD ────────────────────
+// ─── Limite un scratch par jour & affichage du bouton ────────────
 
 function checkDailyScratch() {
   const last = localStorage.getItem('lastScratchDate');
