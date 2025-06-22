@@ -1,5 +1,22 @@
-// 1) Liste des cartes et mapping carte→badge
+// ─── 0) Débogage override via URL ───
+// Liste des cartes disponibles
 const cards = ['card1', 'card2', 'card3', 'card4'];
+
+// Récupère le paramètre ?card=cardX
+const params = new URLSearchParams(window.location.search);
+let currentCard = params.get('card');
+
+// Si invalide ou absent, on retombe sur la carte du jour
+if (!currentCard || !cards.includes(currentCard)) {
+  const todayISO = new Date().toISOString().slice(0,10);
+  const daySeed  = parseInt(todayISO.replace(/-/g,''),10);
+  currentCard    = cards[ daySeed % cards.length ];
+}
+
+// Affiche en console pour vérifier
+console.log('🃏 Carte courante=', currentCard);
+
+// ─── 1) Mapping carte → badge ───
 const cardToBadge = {
   'card1': 'badge1',
   'card2': null,
@@ -7,22 +24,7 @@ const cardToBadge = {
   'card4': 'badge4'
 };
 
-// ─── Override TEMPO pour tester chaque carte via l’URL ───
-// Pour tester, ouvre ton app avec ?card=card1 ou ?card=card2, etc.
-// Ex. https://…/Scratch/?card=card3
-const params = new URLSearchParams(window.location.search);
-let currentCard = params.get('card');
-
-if (!currentCard || !cards.includes(currentCard)) {
-  // pas de param ou valeur invalide → on calcule la carte du jour
-  const todayISO = new Date().toISOString().slice(0,10);
-  const daySeed  = parseInt(todayISO.replace(/-/g,''),10);
-  currentCard    = cards[ daySeed % cards.length ];
-}
-// ─────────────────────────────────────────────────────────
-
-
-// DOM
+// ─── 2) DOM ───
 const tabProfile    = document.getElementById('tab-profile');
 const tabPlay       = document.getElementById('tab-play');
 const tabBadges     = document.getElementById('tab-badges');
@@ -44,36 +46,33 @@ const xpText        = document.getElementById('xp-text');
 
 let drawing = false;
 
-// 3) Gestion des onglets
+// ─── 3) Onglets ───
 function showTab(tab) {
   [viewProfile, viewPlay, viewBadges].forEach(v => v.classList.remove('active'));
   [tabProfile, tabPlay, tabBadges].forEach(t => t.classList.remove('active'));
 
   if (tab === 'profile') {
-    viewProfile.classList.add('active');
-    tabProfile.classList.add('active');
+    viewProfile.classList.add('active'), tabProfile.classList.add('active');
     checkPseudo();
   }
   if (tab === 'play') {
-    viewPlay.classList.add('active');
-    tabPlay.classList.add('active');
+    viewPlay.classList.add('active'), tabPlay.classList.add('active');
     document.getElementById('scratch-image').src = `images/${currentCard}.png`;
     checkDailyScratch();
   }
   if (tab === 'badges') {
-    viewBadges.classList.add('active');
-    tabBadges.classList.add('active');
+    viewBadges.classList.add('active'), tabBadges.classList.add('active');
     renderBadges();
   }
 }
 
-// 4) Bouton reset pour tests
+// ─── 4) Reset tests ───
 resetBtn.addEventListener('click', () => {
   localStorage.clear();
   showTab('profile');
 });
 
-// 5) Initialisation du canvas de grattage
+// ─── 5) Init canvas ───
 function initScratch() {
   const w = area.clientWidth, h = area.clientHeight;
   canvas.width = w; canvas.height = h;
@@ -84,27 +83,26 @@ function initScratch() {
 }
 window.addEventListener('resize', initScratch);
 
-// 6) Récupère la position du curseur
+// ─── 6) Position curseur ───
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
-  const x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
-  const y = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
-  return { x, y };
+  return {
+    x: (e.touches? e.touches[0].clientX : e.clientX) - r.left,
+    y: (e.touches? e.touches[0].clientY : e.clientY) - r.top
+  };
 }
 
-// 7) Vérifie si déjà gratté aujourd’hui
+// ─── 7) Limite 1 scratch/jour ───
 function checkDailyScratch() {
   const todayISO = new Date().toISOString().slice(0,10);
-  const last = localStorage.getItem('lastScratchDate');
+  const last     = localStorage.getItem('lastScratchDate');
+
   if (last === todayISO) {
-    canvas.style.pointerEvents = 'none';
-    canvas.style.opacity       = '0.5';
-    rewardBtn.style.display    = 'block';
-    rewardBtn.textContent      = 'Déjà gratté aujourd’hui';
+    canvas.style.pointerEvents = 'none'; canvas.style.opacity = '0.5';
+    rewardBtn.style.display    = 'block'; rewardBtn.textContent = 'Déjà gratté aujourd’hui';
   } else {
     initScratch();
-    canvas.style.pointerEvents = 'auto';
-    canvas.style.opacity       = '1';
+    canvas.style.pointerEvents = 'auto'; canvas.style.opacity = '1';
     if (cardToBadge[currentCard] === null) {
       rewardBtn.style.display    = 'block';
       rewardBtn.textContent      = 'Déjà gratté aujourd’hui';
@@ -115,16 +113,15 @@ function checkDailyScratch() {
   }
 }
 
-// 8) Contrôle des 60% grattés
+// ─── 8) Vérif 60% ───
 function checkClear() {
   const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
   let cleared = 0;
-  for (let i = 3; i < data.length; i += 4) {
-    if (data[i] === 0) cleared++;
-  }
+  for (let i = 3; i < data.length; i += 4) if (data[i] === 0) cleared++;
   if (cleared/(canvas.width*canvas.height)*100 >= 60) {
     const todayISO = new Date().toISOString().slice(0,10);
     localStorage.setItem('lastScratchDate', todayISO);
+
     const badgeId = cardToBadge[currentCard];
     if (badgeId) {
       const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
@@ -133,27 +130,24 @@ function checkClear() {
         localStorage.setItem('scratchLog', JSON.stringify(log));
       }
     }
-    rewardBtn.style.display    = 'block';
-    rewardBtn.textContent      = 'Déjà gratté aujourd’hui';
+
+    rewardBtn.style.display = 'block';
+    rewardBtn.textContent   = 'Déjà gratté aujourd’hui';
     updateXPDisplay();
   }
 }
 
-// 9) Événements de grattage
+// ─── 9) Événements scratch ───
 ['mousedown','touchstart'].forEach(evt => {
   canvas.addEventListener(evt, e => {
-    drawing = true;
-    const p = getPos(e);
-    ctx.beginPath();
-    ctx.moveTo(p.x,p.y);
+    drawing = true; const p = getPos(e);
+    ctx.beginPath(); ctx.moveTo(p.x,p.y);
   });
 });
 ['mousemove','touchmove'].forEach(evt => {
   canvas.addEventListener(evt, e => {
-    if (!drawing) return;
-    const p = getPos(e);
-    ctx.lineTo(p.x,p.y);
-    ctx.stroke();
+    if (!drawing) return; const p = getPos(e);
+    ctx.lineTo(p.x,p.y); ctx.stroke();
   });
 });
 ['mouseup','mouseleave','touchend'].forEach(evt => {
@@ -163,12 +157,13 @@ function checkClear() {
   });
 });
 
-// 10) Clic sur “REWARD”
+// ─── 10) Bouton REWARD ───
 ['click','touchend'].forEach(evt => {
   rewardBtn.addEventListener(evt, () => {
     if (rewardBtn.textContent !== 'REWARD') return;
     ctx.globalCompositeOperation = 'destination-out';
     ctx.clearRect(0,0,canvas.width,canvas.height);
+
     const badgeId = cardToBadge[currentCard];
     if (badgeId) {
       const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
@@ -177,31 +172,30 @@ function checkClear() {
         localStorage.setItem('scratchLog', JSON.stringify(log));
       }
     }
+
     const todayISO = new Date().toISOString().slice(0,10);
     localStorage.setItem('lastScratchDate', todayISO);
-    rewardBtn.style.display    = 'block';
-    rewardBtn.textContent      = 'Déjà gratté aujourd’hui';
+    rewardBtn.style.display = 'block';
+    rewardBtn.textContent   = 'Déjà gratté aujourd’hui';
     updateXPDisplay();
     showTab('badges');
   });
 });
 
-// 11) Rendu des badges
+// ─── 11) Rendu badges ───
 function renderBadges() {
   const ul = document.getElementById('badges-list');
   ul.innerHTML = '';
   JSON.parse(localStorage.getItem('scratchLog')||'[]')
     .forEach(id => {
-      const li  = document.createElement('li');
+      const li = document.createElement('li');
       const img = document.createElement('img');
-      img.src = `images/${id}.png`;
-      img.alt = `Badge ${id}`;
-      li.appendChild(img);
-      ul.appendChild(li);
+      img.src = `images/${id}.png`; img.alt = `Badge ${id}`;
+      li.appendChild(img); ul.appendChild(li);
     });
 }
 
-// 12) Mise à jour Level & XP
+// ─── 12) Level & XP ───
 function updateXPDisplay() {
   const log   = JSON.parse(localStorage.getItem('scratchLog')||'[]');
   const xp    = log.length * 20;
@@ -212,11 +206,10 @@ function updateXPDisplay() {
   xpText.textContent       = `XP : ${rem}/100`;
 }
 
-// 13) Service Worker
+// ─── 13) Service Worker ───
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js')
-    .catch(err => console.error(err));
+  navigator.serviceWorker.register('sw.js').catch(err => console.error(err));
 }
 
-// Démarre sur “profile”
+// Démarrage
 showTab('profile');
