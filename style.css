@@ -63,7 +63,7 @@ html, body {
 #profile-form button {
   padding: .5rem 1rem; background: #007BFF; color: #FFF;
   border: none; border-radius: 4px; cursor: pointer;
-  font-size: 16px;              /* cohérence typographique */
+  font-size: 16px;
 }
 #profile-form button:hover { background: #0069D9; }
 
@@ -129,7 +129,7 @@ html, body {
   font-weight: bold;
 }
 
-/* REWARDS */
+/* REWARDS en grille 2×3 */
 #view-badges h2 {
   text-align: center; margin-bottom: 1rem;
 }
@@ -140,7 +140,7 @@ html, body {
 }
 #badges-list li {
   display: flex; justify-content: center; align-items: center;
-  height: calc((100vh - 4rem /* header */ - 3rem /* tabs */) / 3);
+  height: calc((100vh - 1rem*2/*padding vues*/ - 1.5rem/*tabs*/ - 3rem/*header h2*/) / 3);
 }
 #badges-list li img {
   max-width: 100%; max-height: 100%; object-fit: contain;

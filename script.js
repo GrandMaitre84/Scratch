@@ -33,11 +33,35 @@ const xpText       = document.getElementById('xp-text');
 
 let drawing = false;
 
-// 4) Fonction de bascule d’onglet
+
+// ─── Gestion du pseudo ───────────────────────────────────────────
+
+// Affiche ou cache le formulaire selon la présence d'un pseudo
+function checkPseudo() {
+  const profileForm = document.getElementById('profile-form');
+  const stored = localStorage.getItem('pseudo');
+  if (stored) {
+    profileForm.style.display = 'none';
+    pseudoSpan.textContent    = stored;
+  } else {
+    profileForm.style.display = 'flex';
+    pseudoSpan.textContent    = '';
+  }
+}
+
+// Quand on clique sur Valider, on stocke et on met à jour l'affichage
+pseudoBtn.addEventListener('click', () => {
+  const val = pseudoInput.value.trim();
+  if (!val) return;
+  localStorage.setItem('pseudo', val);
+  checkPseudo();
+});
+
+
+// ─── Fonction de bascule d’onglet ────────────────────────────────
+
 function showTab(tab) {
-  // Masque toutes les vues
   [viewProfile, viewPlay, viewBadges].forEach(v => v.classList.remove('active'));
-  // Désactive tous les onglets
   [tabProfile, tabPlay, tabBadges].forEach(t => t.classList.remove('active'));
 
   if (tab === 'profile') {
@@ -58,32 +82,32 @@ function showTab(tab) {
   }
 }
 
-// 5) Listeners onglets
+// ─── Listeners onglets & reset ──────────────────────────────────
 tabProfile.addEventListener('click', () => showTab('profile'));
 tabPlay.addEventListener   ('click', () => showTab('play'));
 tabBadges.addEventListener ('click', () => showTab('badges'));
 
-// 6) Reset pour tests
 resetBtn.addEventListener('click', () => {
   localStorage.clear();
   showTab('profile');
 });
 
-// 7) Initialisation du canvas de grattage
+
+// ─── Grattage : initialisation ───────────────────────────────────
+
 function initScratch() {
   const w = area.clientWidth, h = area.clientHeight;
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = w; canvas.height = h;
   ctx.globalCompositeOperation = 'source-over';
   ctx.fillStyle = '#999';
-  ctx.fillRect(0, 0, w, h);
+  ctx.fillRect(0,0,w,h);
   ctx.globalCompositeOperation = 'destination-out';
-  ctx.lineWidth = 30;
-  ctx.lineCap = 'round';
+  ctx.lineWidth = 30; ctx.lineCap = 'round';
 }
 window.addEventListener('resize', initScratch);
 
-// 8) Récupère la position du curseur
+// ─── Position du curseur ─────────────────────────────────────────
+
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
   return {
@@ -92,7 +116,9 @@ function getPos(e) {
   };
 }
 
-// 9) Limite un scratch par jour
+
+// ─── Limite un scratch/jour & affichage REWARD ────────────────────
+
 function checkDailyScratch() {
   const last = localStorage.getItem('lastScratchDate');
   if (last === todayISO) {
@@ -114,18 +140,20 @@ function checkDailyScratch() {
   }
 }
 
-// 10) Vérification du grattage à 60%
+
+// ─── Vérification du grattage à 60% ──────────────────────────────
+
 function checkClear() {
-  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
   let cleared = 0;
   for (let i = 3; i < data.length; i += 4) {
     if (data[i] === 0) cleared++;
   }
-  if (cleared / (canvas.width * canvas.height) * 100 >= 60) {
+  if (cleared/(canvas.width*canvas.height)*100 >= 60) {
     localStorage.setItem('lastScratchDate', todayISO);
     const badgeId = cardToBadge[currentCard];
     if (badgeId) {
-      const log = JSON.parse(localStorage.getItem('scratchLog') || '[]');
+      const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
       if (!log.includes(badgeId)) {
         log.push(badgeId);
         localStorage.setItem('scratchLog', JSON.stringify(log));
@@ -137,39 +165,43 @@ function checkClear() {
   }
 }
 
-// 11) Événements de grattage
-['mousedown', 'touchstart'].forEach(evt => {
+
+// ─── Événements de grattage ─────────────────────────────────────
+
+['mousedown','touchstart'].forEach(evt => {
   canvas.addEventListener(evt, e => {
     drawing = true;
     const p = getPos(e);
     ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
+    ctx.moveTo(p.x,p.y);
   });
 });
-['mousemove', 'touchmove'].forEach(evt => {
+['mousemove','touchmove'].forEach(evt => {
   canvas.addEventListener(evt, e => {
     if (!drawing) return;
     const p = getPos(e);
-    ctx.lineTo(p.x, p.y);
+    ctx.lineTo(p.x,p.y);
     ctx.stroke();
   });
 });
-['mouseup', 'mouseleave', 'touchend'].forEach(evt => {
+['mouseup','mouseleave','touchend'].forEach(evt => {
   canvas.addEventListener(evt, () => {
     if (drawing) checkClear();
     drawing = false;
   });
 });
 
-// 12) Clic sur “REWARD”
-['click', 'touchend'].forEach(evt => {
+
+// ─── Clic sur “REWARD” ───────────────────────────────────────────
+
+['click','touchend'].forEach(evt => {
   rewardBtn.addEventListener(evt, () => {
     if (rewardBtn.textContent !== 'REWARD') return;
     ctx.globalCompositeOperation = 'destination-out';
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
     const badgeId = cardToBadge[currentCard];
     if (badgeId) {
-      const log = JSON.parse(localStorage.getItem('scratchLog') || '[]');
+      const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
       if (!log.includes(badgeId)) {
         log.push(badgeId);
         localStorage.setItem('scratchLog', JSON.stringify(log));
@@ -183,11 +215,13 @@ function checkClear() {
   });
 });
 
-// 13) Affichage des badges
+
+// ─── Affichage des badges ────────────────────────────────────────
+
 function renderBadges() {
   const ul = document.getElementById('badges-list');
   ul.innerHTML = '';
-  JSON.parse(localStorage.getItem('scratchLog') || '[]').forEach(id => {
+  JSON.parse(localStorage.getItem('scratchLog')||'[]').forEach(id => {
     const li  = document.createElement('li');
     const img = document.createElement('img');
     img.src = `images/${id}.png`;
@@ -197,9 +231,11 @@ function renderBadges() {
   });
 }
 
-// 14) Mise à jour Level & XP
+
+// ─── Mise à jour Level & XP ─────────────────────────────────────
+
 function updateXPDisplay() {
-  const log   = JSON.parse(localStorage.getItem('scratchLog') || '[]');
+  const log   = JSON.parse(localStorage.getItem('scratchLog')||'[]');
   const xp    = log.length * 20;
   const level = Math.floor(xp / 100);
   const rem   = xp % 100;
@@ -208,10 +244,14 @@ function updateXPDisplay() {
   xpText.textContent       = `XP : ${rem}/100`;
 }
 
-// 15) Service Worker
+
+// ─── Service Worker ──────────────────────────────────────────────
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(err => console.error(err));
 }
 
-// Démarrage sur PROFIL
+
+// ─── Démarrage sur PROFIL ────────────────────────────────────────
+
 showTab('profile');
