@@ -63,10 +63,9 @@ pseudoBtn.addEventListener('click', () => {
 
 // ─── 5) Mise à jour XP & Level ────────────────────────────────────
 function updateXPDisplay() {
-  const log   = JSON.parse(localStorage.getItem('scratchLog')||'[]');
-  const xp    = log.length * 20;
-  const level = Math.floor(xp / 100);
-  const rem   = xp % 100;
+  const xpTotal = parseInt(localStorage.getItem('xpTotal') || '0', 10);
+  const level = Math.floor(xpTotal / 100);
+  const rem   = xpTotal % 100;
   levelDisplay.textContent = `Level : ${level}`;
   xpBar.style.width        = `${rem}%`;
   xpText.textContent       = `XP : ${rem}/100`;
@@ -99,10 +98,11 @@ tabProfile.addEventListener('click', () => showTab('profile'));
 tabPlay.addEventListener   ('click', () => showTab('play'));
 tabBadges.addEventListener ('click', () => showTab('badges'));
 
-// Réinitialisation pour tests : NE SUPPRIME PLUS startDate ni pseudo
+// Réinitialisation pour tests : conserve startDate et pseudo
 resetBtn.addEventListener('click', () => {
   localStorage.removeItem('scratchLog');
   localStorage.removeItem('lastScratchDate');
+  localStorage.removeItem('xpTotal');
   showTab('profile');
 });
 
@@ -150,6 +150,12 @@ function checkClear() {
     if (data[i] === 0) cleared++;
   }
   if (cleared/(canvas.width*canvas.height)*100 >= 60) {
+    // ajoute toujours 20 XP
+    const xpTotal = parseInt(localStorage.getItem('xpTotal')||'0',10) + 20;
+    localStorage.setItem('xpTotal', xpTotal);
+    updateXPDisplay();
+
+    // affiche bouton selon badge
     if (cardToBadge[currentCard]) {
       rewardBtn.textContent = 'REWARD';
     } else {
@@ -186,10 +192,12 @@ function checkClear() {
 ['click','touchend'].forEach(evt => {
   rewardBtn.addEventListener(evt, () => {
     if (rewardBtn.textContent === 'REWARD' || rewardBtn.textContent === 'Déjà gratté aujourd’hui') {
+      // dévoile toute la carte
       ctx.globalCompositeOperation = 'destination-out';
       ctx.clearRect(0,0,canvas.width,canvas.height);
+      // enregistre date
       localStorage.setItem('lastScratchDate', todayISO);
-
+      // ajoute le badge si présent
       const badgeId = cardToBadge[currentCard];
       if (badgeId && rewardBtn.textContent === 'REWARD') {
         const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
@@ -198,8 +206,6 @@ function checkClear() {
           localStorage.setItem('scratchLog', JSON.stringify(log));
         }
       }
-
-      updateXPDisplay();
       showTab('badges');
     }
   });
