@@ -138,10 +138,30 @@ html, body {
   grid-template-columns: repeat(2, 1fr);
   gap: 12px; list-style: none; padding: 0; margin: 0;
 }
-#badges-list li {
+
+/* cases de récompense vides ou remplies */
+#badges-list li.badge-slot {
+  position: relative;
   display: flex; justify-content: center; align-items: center;
-  height: calc((100vh - 1rem*2/*padding vues*/ - 1.5rem/*tabs*/ - 3rem/*header h2*/) / 3);
+  height: calc((100vh - 2rem /* padding vues */ - 1.5rem /* tabs */ - 3rem /* header h2 */) / 6);
+  border: 1px dashed #AAA;            /* contour de l’emplacement */
+  border-radius: 4px;                  /* coins arrondis */
+  background: rgba(255,255,255,0.2);   /* léger fond pour distinguer */
+  overflow: hidden;
 }
-#badges-list li img {
-  max-width: 100%; max-height: 100%; object-fit: contain;
+
+/* numéro de slot en haut à gauche */
+.badge-slot-number {
+  position: absolute;
+  top: 4px; left: 6px;
+  font-size: 0.75rem;
+  color: #555;
+  font-weight: bold;
+}
+
+/* image de badge */
+#badges-list li.badge-slot img {
+  max-width: 80%;
+  max-height: 80%;
+  object-fit: contain;
 }

@@ -61,12 +61,12 @@ pseudoBtn.addEventListener('click', () => {
   checkPseudo();
 });
 
-// ─── 5) Mise à jour XP & Level ────────────────────────────────────
+// ─── 5) Mise à jour XP & “Level of love” ─────────────────────────
 function updateXPDisplay() {
   const xpTotal = parseInt(localStorage.getItem('xpTotal') || '0', 10);
   const level = Math.floor(xpTotal / 100);
   const rem   = xpTotal % 100;
-  levelDisplay.textContent = `Level : ${level}`;
+  levelDisplay.textContent = `Level of love : ${level}`;
   xpBar.style.width        = `${rem}%`;
   xpText.textContent       = `XP : ${rem}/100`;
 }
@@ -211,16 +211,34 @@ function checkClear() {
   });
 });
 
-// ─── 13) Affichage des badges ─────────────────────────────────────
+// ─── 13) Affichage des badges (30 emplacements numérotés) ───────────
 function renderBadges() {
   const ul = document.getElementById('badges-list');
   ul.innerHTML = '';
-  JSON.parse(localStorage.getItem('scratchLog')||'[]').forEach(id => {
-    const li  = document.createElement('li');
-    const img = document.createElement('img');
-    img.src = `images/${id}.png`; img.alt = `Badge ${id}`;
-    li.appendChild(img); ul.appendChild(li);
-  });
+
+  const SLOTS = 30;
+  const won   = JSON.parse(localStorage.getItem('scratchLog') || '[]');
+
+  for (let i = 0; i < SLOTS; i++) {
+    const li = document.createElement('li');
+    li.classList.add('badge-slot');
+
+    // numéro de case en haut à gauche
+    const num = document.createElement('span');
+    num.classList.add('badge-slot-number');
+    num.textContent = i + 1;
+    li.appendChild(num);
+
+    // si badge gagné à cet index, on l'affiche
+    if (won[i]) {
+      const img = document.createElement('img');
+      img.src = `images/${won[i]}.png`;
+      img.alt = `Badge ${won[i]}`;
+      li.appendChild(img);
+    }
+
+    ul.appendChild(li);
+  }
 }
 
 // ─── 14) Service Worker ──────────────────────────────────────────
