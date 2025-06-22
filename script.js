@@ -98,11 +98,12 @@ tabProfile.addEventListener('click', () => showTab('profile'));
 tabPlay.addEventListener   ('click', () => showTab('play'));
 tabBadges.addEventListener ('click', () => showTab('badges'));
 
-// Réinitialisation pour tests : conserve startDate et pseudo
+// Réinitialisation pour tests : supprime scratchLog, lastScratchDate, xpTotal, et pseudo
 resetBtn.addEventListener('click', () => {
   localStorage.removeItem('scratchLog');
   localStorage.removeItem('lastScratchDate');
   localStorage.removeItem('xpTotal');
+  localStorage.removeItem('pseudo');
   showTab('profile');
 });
 
