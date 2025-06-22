@@ -12,7 +12,7 @@ const todayISO    = new Date().toISOString().slice(0,10);
 const daySeed     = parseInt(todayISO.replace(/-/g,''),10);
 const currentCard = cards[ daySeed % cards.length ];
 
-// 3) DOM
+// 3) Récupération du DOM
 const tabProfile   = document.getElementById('tab-profile');
 const tabPlay      = document.getElementById('tab-play');
 const tabBadges    = document.getElementById('tab-badges');
@@ -33,9 +33,11 @@ const xpText       = document.getElementById('xp-text');
 
 let drawing = false;
 
-// 4) Gestion des onglets
+// 4) Fonction de bascule d’onglet
 function showTab(tab) {
+  // Masque toutes les vues
   [viewProfile, viewPlay, viewBadges].forEach(v => v.classList.remove('active'));
+  // Désactive tous les onglets
   [tabProfile, tabPlay, tabBadges].forEach(t => t.classList.remove('active'));
 
   if (tab === 'profile') {
@@ -46,7 +48,6 @@ function showTab(tab) {
   if (tab === 'play') {
     viewPlay.classList.add('active');
     tabPlay.classList.add('active');
-    // met à jour l’image
     document.getElementById('scratch-image').src = `images/${currentCard}.png`;
     checkDailyScratch();
   }
@@ -57,32 +58,32 @@ function showTab(tab) {
   }
 }
 
-// 5) Écouteurs sur les boutons d’onglets
+// 5) Listeners onglets
 tabProfile.addEventListener('click', () => showTab('profile'));
 tabPlay.addEventListener   ('click', () => showTab('play'));
 tabBadges.addEventListener ('click', () => showTab('badges'));
 
-// 6) Réinitialisation pour tests
+// 6) Reset pour tests
 resetBtn.addEventListener('click', () => {
   localStorage.clear();
   showTab('profile');
 });
 
-// 7) Initialisation du canvas
+// 7) Initialisation du canvas de grattage
 function initScratch() {
   const w = area.clientWidth, h = area.clientHeight;
   canvas.width = w;
   canvas.height = h;
   ctx.globalCompositeOperation = 'source-over';
   ctx.fillStyle = '#999';
-  ctx.fillRect(0,0,w,h);
+  ctx.fillRect(0, 0, w, h);
   ctx.globalCompositeOperation = 'destination-out';
   ctx.lineWidth = 30;
   ctx.lineCap = 'round';
 }
 window.addEventListener('resize', initScratch);
 
-// 8) Récupérer la position du curseur
+// 8) Récupère la position du curseur
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
   return {
@@ -96,64 +97,64 @@ function checkDailyScratch() {
   const last = localStorage.getItem('lastScratchDate');
   if (last === todayISO) {
     canvas.style.pointerEvents = 'none';
-    canvas.style.opacity = '0.5';
-    rewardBtn.style.display = 'block';
-    rewardBtn.textContent = 'Déjà gratté aujourd’hui';
+    canvas.style.opacity       = '0.5';
+    rewardBtn.style.display    = 'block';
+    rewardBtn.textContent      = 'Déjà gratté aujourd’hui';
   } else {
     initScratch();
     canvas.style.pointerEvents = 'auto';
-    canvas.style.opacity = '1';
+    canvas.style.opacity       = '1';
     if (cardToBadge[currentCard] === null) {
-      rewardBtn.style.display = 'block';
-      rewardBtn.textContent = 'Déjà gratté aujourd’hui';
+      rewardBtn.style.display    = 'block';
+      rewardBtn.textContent      = 'Déjà gratté aujourd’hui';
     } else {
-      rewardBtn.style.display = 'none';
-      rewardBtn.textContent = 'REWARD';
+      rewardBtn.style.display    = 'none';
+      rewardBtn.textContent      = 'REWARD';
     }
   }
 }
 
 // 10) Vérification du grattage à 60%
 function checkClear() {
-  const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
   let cleared = 0;
   for (let i = 3; i < data.length; i += 4) {
     if (data[i] === 0) cleared++;
   }
-  if (cleared/(canvas.width*canvas.height)*100 >= 60) {
+  if (cleared / (canvas.width * canvas.height) * 100 >= 60) {
     localStorage.setItem('lastScratchDate', todayISO);
     const badgeId = cardToBadge[currentCard];
     if (badgeId) {
-      const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+      const log = JSON.parse(localStorage.getItem('scratchLog') || '[]');
       if (!log.includes(badgeId)) {
         log.push(badgeId);
         localStorage.setItem('scratchLog', JSON.stringify(log));
       }
     }
     rewardBtn.style.display = 'block';
-    rewardBtn.textContent = 'Déjà gratté aujourd’hui';
+    rewardBtn.textContent   = 'Déjà gratté aujourd’hui';
     updateXPDisplay();
   }
 }
 
 // 11) Événements de grattage
-['mousedown','touchstart'].forEach(evt => {
+['mousedown', 'touchstart'].forEach(evt => {
   canvas.addEventListener(evt, e => {
     drawing = true;
     const p = getPos(e);
     ctx.beginPath();
-    ctx.moveTo(p.x,p.y);
+    ctx.moveTo(p.x, p.y);
   });
 });
-['mousemove','touchmove'].forEach(evt => {
+['mousemove', 'touchmove'].forEach(evt => {
   canvas.addEventListener(evt, e => {
     if (!drawing) return;
     const p = getPos(e);
-    ctx.lineTo(p.x,p.y);
+    ctx.lineTo(p.x, p.y);
     ctx.stroke();
   });
 });
-['mouseup','mouseleave','touchend'].forEach(evt => {
+['mouseup', 'mouseleave', 'touchend'].forEach(evt => {
   canvas.addEventListener(evt, () => {
     if (drawing) checkClear();
     drawing = false;
@@ -161,14 +162,14 @@ function checkClear() {
 });
 
 // 12) Clic sur “REWARD”
-['click','touchend'].forEach(evt => {
+['click', 'touchend'].forEach(evt => {
   rewardBtn.addEventListener(evt, () => {
     if (rewardBtn.textContent !== 'REWARD') return;
     ctx.globalCompositeOperation = 'destination-out';
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     const badgeId = cardToBadge[currentCard];
     if (badgeId) {
-      const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+      const log = JSON.parse(localStorage.getItem('scratchLog') || '[]');
       if (!log.includes(badgeId)) {
         log.push(badgeId);
         localStorage.setItem('scratchLog', JSON.stringify(log));
@@ -176,7 +177,7 @@ function checkClear() {
     }
     localStorage.setItem('lastScratchDate', todayISO);
     rewardBtn.style.display = 'block';
-    rewardBtn.textContent = 'Déjà gratté aujourd’hui';
+    rewardBtn.textContent   = 'Déjà gratté aujourd’hui';
     updateXPDisplay();
     showTab('badges');
   });
@@ -186,8 +187,8 @@ function checkClear() {
 function renderBadges() {
   const ul = document.getElementById('badges-list');
   ul.innerHTML = '';
-  JSON.parse(localStorage.getItem('scratchLog')||'[]').forEach(id => {
-    const li = document.createElement('li');
+  JSON.parse(localStorage.getItem('scratchLog') || '[]').forEach(id => {
+    const li  = document.createElement('li');
     const img = document.createElement('img');
     img.src = `images/${id}.png`;
     img.alt = `Badge ${id}`;
@@ -198,19 +199,19 @@ function renderBadges() {
 
 // 14) Mise à jour Level & XP
 function updateXPDisplay() {
-  const log   = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+  const log   = JSON.parse(localStorage.getItem('scratchLog') || '[]');
   const xp    = log.length * 20;
-  const level = Math.floor(xp/100);
+  const level = Math.floor(xp / 100);
   const rem   = xp % 100;
   levelDisplay.textContent = `Level : ${level}`;
   xpBar.style.width        = `${rem}%`;
   xpText.textContent       = `XP : ${rem}/100`;
 }
 
-// 15) Service worker
+// 15) Service Worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(err => console.error(err));
 }
 
-// Démarrage sur profil
+// Démarrage sur PROFIL
 showTab('profile');
