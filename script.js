@@ -61,7 +61,18 @@ pseudoBtn.addEventListener('click', () => {
   checkPseudo();
 });
 
-// ─── 5) Bascule d’onglet ───────────────────────────────────────────
+// ─── 5) Mise à jour XP & Level ────────────────────────────────────
+function updateXPDisplay() {
+  const log   = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+  const xp    = log.length * 20;
+  const level = Math.floor(xp / 100);
+  const rem   = xp % 100;
+  levelDisplay.textContent = `Level : ${level}`;
+  xpBar.style.width        = `${rem}%`;
+  xpText.textContent       = `XP : ${rem}/100`;
+}
+
+// ─── 6) Bascule d’onglet ───────────────────────────────────────────
 function showTab(tab) {
   [viewProfile, viewPlay, viewBadges].forEach(v => v.classList.remove('active'));
   [tabProfile, tabPlay, tabBadges].forEach(t => t.classList.remove('active'));
@@ -70,6 +81,7 @@ function showTab(tab) {
     viewProfile.classList.add('active');
     tabProfile.classList.add('active');
     checkPseudo();
+    updateXPDisplay();
   }
   if (tab === 'play') {
     viewPlay.classList.add('active');
@@ -91,19 +103,18 @@ resetBtn.addEventListener  ('click', () => {
   showTab('profile');
 });
 
-// ─── 6) Initialisation du canvas ───────────────────────────────────
+// ─── 7) Initialisation du canvas ───────────────────────────────────
 function initScratch() {
   const w = area.clientWidth, h = area.clientHeight;
   canvas.width = w; canvas.height = h;
   ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = '#999';
-  ctx.fillRect(0,0,w,h);
+  ctx.fillStyle = '#999'; ctx.fillRect(0,0,w,h);
   ctx.globalCompositeOperation = 'destination-out';
   ctx.lineWidth = 30; ctx.lineCap = 'round';
 }
 window.addEventListener('resize', initScratch);
 
-// ─── 7) Position du curseur ───────────────────────────────────────
+// ─── 8) Position du curseur ───────────────────────────────────────
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
   return {
@@ -112,19 +123,17 @@ function getPos(e) {
   };
 }
 
-// ─── 8) Limite 1 scratch/jour & cartes sans badge ─────────────────
+// ─── 9) Limite 1 scratch/jour ─────────────────────────────────────
 function checkDailyScratch() {
   const last = localStorage.getItem('lastScratchDate');
-  const hasBadge = cardToBadge[currentCard] !== null;
-
-  if (last === todayISO || !hasBadge) {
-    // soit déjà gratté aujourd’hui, soit pas de badge → bloquer
+  if (last === todayISO) {
+    // déjà gratté aujourd’hui
     canvas.style.pointerEvents = 'none';
     canvas.style.opacity       = '0.5';
     rewardBtn.style.display    = 'block';
     rewardBtn.textContent      = 'Déjà gratté aujourd’hui';
   } else {
-    // carte à gratter
+    // peut gratter
     initScratch();
     canvas.style.pointerEvents = 'auto';
     canvas.style.opacity       = '1';
@@ -132,7 +141,7 @@ function checkDailyScratch() {
   }
 }
 
-// ─── 9) Vérification 60% gratté ───────────────────────────────────
+// ─── 10) Vérification du grattage à 60% ────────────────────────────
 function checkClear() {
   const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
   let cleared = 0;
@@ -140,13 +149,18 @@ function checkClear() {
     if (data[i] === 0) cleared++;
   }
   if (cleared/(canvas.width*canvas.height)*100 >= 60) {
+    // affiche bouton selon badge
+    if (cardToBadge[currentCard]) {
+      rewardBtn.textContent = 'REWARD';
+    } else {
+      rewardBtn.textContent = 'Déjà gratté aujourd’hui';
+    }
     rewardBtn.style.display = 'block';
-    rewardBtn.textContent   = 'REWARD';
     canvas.style.pointerEvents = 'none';
   }
 }
 
-// ─── 10) Événements de grattage ─────────────────────────────────
+// ─── 11) Événements de grattage ──────────────────────────────────
 ['mousedown','touchstart'].forEach(evt => {
   canvas.addEventListener(evt, e => {
     drawing = true;
@@ -168,31 +182,36 @@ function checkClear() {
   });
 });
 
-// ─── 11) Clic sur “REWARD” ───────────────────────────────────────
+// ─── 12) Clic sur bouton ──────────────────────────────────────────
 ['click','touchend'].forEach(evt => {
   rewardBtn.addEventListener(evt, () => {
-    if (rewardBtn.textContent !== 'REWARD') return;
-    // dévoile
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    // date du jour
-    localStorage.setItem('lastScratchDate', todayISO);
-    // ajout badge si défini
-    const badgeId = cardToBadge[currentCard];
-    if (badgeId) {
-      const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
-      if (!log.includes(badgeId)) {
-        log.push(badgeId);
-        localStorage.setItem('scratchLog', JSON.stringify(log));
+    // si pas encore scratché 60%, ignore
+    if (rewardBtn.textContent === 'REWARD' || rewardBtn.textContent === 'Déjà gratté aujourd’hui') {
+      // dévoile toute la carte
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      // enregistre date
+      localStorage.setItem('lastScratchDate', todayISO);
+
+      // si badge, l'ajoute
+      const badgeId = cardToBadge[currentCard];
+      if (badgeId && rewardBtn.textContent === 'REWARD') {
+        const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+        if (!log.includes(badgeId)) {
+          log.push(badgeId);
+          localStorage.setItem('scratchLog', JSON.stringify(log));
+        }
       }
+
+      // met à jour l’XP et onglet
+      updateXPDisplay();
+      showTab('badges');
     }
-    rewardBtn.textContent = 'Déjà gratté aujourd’hui';
-    updateXPDisplay();
-    showTab('badges');
   });
 });
 
-// ─── 12) Affichage des badges ─────────────────────────────────────
+// ─── 13) Affichage des badges ─────────────────────────────────────
 function renderBadges() {
   const ul = document.getElementById('badges-list');
   ul.innerHTML = '';
@@ -204,21 +223,10 @@ function renderBadges() {
   });
 }
 
-// ─── 13) Mise à jour Level & XP ──────────────────────────────────
-function updateXPDisplay() {
-  const log   = JSON.parse(localStorage.getItem('scratchLog')||'[]');
-  const xp    = log.length * 20;
-  const level = Math.floor(xp / 100);
-  const rem   = xp % 100;
-  levelDisplay.textContent = `Level : ${level}`;
-  xpBar.style.width        = `${rem}%`;
-  xpText.textContent       = `XP : ${rem}/100`;
-}
-
 // ─── 14) Service Worker ──────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(err => console.error(err));
 }
 
-// démarrage sur PROFIL
+// Démarrage sur PROFIL
 showTab('profile');
