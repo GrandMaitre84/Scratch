@@ -1,3 +1,27 @@
+// 1) Liste des cartes et mapping carte→badge
+const cards = ['card1', 'card2', 'card3', 'card4'];
+const cardToBadge = {
+  'card1': 'badge1',
+  'card2': null,
+  'card3': null,
+  'card4': 'badge4'
+};
+
+// ─── Override TEMPO pour tester chaque carte via l’URL ───
+// Pour tester, ouvre ton app avec ?card=card1 ou ?card=card2, etc.
+// Ex. https://…/Scratch/?card=card3
+const params = new URLSearchParams(window.location.search);
+let currentCard = params.get('card');
+
+if (!currentCard || !cards.includes(currentCard)) {
+  // pas de param ou valeur invalide → on calcule la carte du jour
+  const todayISO = new Date().toISOString().slice(0,10);
+  const daySeed  = parseInt(todayISO.replace(/-/g,''),10);
+  currentCard    = cards[ daySeed % cards.length ];
+}
+// ─────────────────────────────────────────────────────────
+
+
 // DOM
 const tabProfile    = document.getElementById('tab-profile');
 const tabPlay       = document.getElementById('tab-play');
@@ -20,52 +44,36 @@ const xpText        = document.getElementById('xp-text');
 
 let drawing = false;
 
-// Bascule d’onglet
+// 3) Gestion des onglets
 function showTab(tab) {
   [viewProfile, viewPlay, viewBadges].forEach(v => v.classList.remove('active'));
   [tabProfile, tabPlay, tabBadges].forEach(t => t.classList.remove('active'));
+
   if (tab === 'profile') {
-    viewProfile.classList.add('active'); tabProfile.classList.add('active');
+    viewProfile.classList.add('active');
+    tabProfile.classList.add('active');
     checkPseudo();
   }
   if (tab === 'play') {
-    viewPlay.classList.add('active'); tabPlay.classList.add('active');
+    viewPlay.classList.add('active');
+    tabPlay.classList.add('active');
+    document.getElementById('scratch-image').src = `images/${currentCard}.png`;
     checkDailyScratch();
   }
   if (tab === 'badges') {
-    viewBadges.classList.add('active'); tabBadges.classList.add('active');
+    viewBadges.classList.add('active');
+    tabBadges.classList.add('active');
     renderBadges();
   }
 }
 
-// Écoute onglets
-['click','touchend'].forEach(evt => {
-  tabProfile.addEventListener(evt, () => showTab('profile'));
-  tabPlay.addEventListener(evt,    () => showTab('play'));
-  tabBadges.addEventListener(evt,  () => showTab('badges'));
-});
-
-// Reset pour tests (efface pseudo, XP, badges et scratch)
+// 4) Bouton reset pour tests
 resetBtn.addEventListener('click', () => {
   localStorage.clear();
-
-  // Réinitialise le pseudo
-  pseudoInput.value        = '';
-  pseudoSpan.textContent   = '';
-
-  // Réaffiche le formulaire de pseudo
-  profileForm.style.display = 'flex';
-
-  // Réinitialise niveau et XP
-  levelDisplay.textContent = 'Level : 0';
-  xpBar.style.width        = '0%';
-  xpText.textContent       = 'XP : 0/100';
-
-  // Retour sur Profil
   showTab('profile');
 });
 
-// Initialisation scratch
+// 5) Initialisation du canvas de grattage
 function initScratch() {
   const w = area.clientWidth, h = area.clientHeight;
   canvas.width = w; canvas.height = h;
@@ -76,49 +84,38 @@ function initScratch() {
 }
 window.addEventListener('resize', initScratch);
 
-// Position souris/tactile
+// 6) Récupère la position du curseur
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
-  return {
-    x: (e.touches ? e.touches[0].clientX : e.clientX) - r.left,
-    y: (e.touches ? e.touches[0].clientY : e.clientY) - r.top
-  };
+  const x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+  const y = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+  return { x, y };
 }
 
-// Gestion du pseudo et affichage header
-function checkPseudo() {
-  const stored = localStorage.getItem('pseudo');
-  if (stored) {
-    profileForm.style.display = 'none';
-    pseudoSpan.textContent    = stored;
-    updateXPDisplay();
-  } else {
-    profileForm.style.display = 'flex';
-  }
-}
-pseudoBtn.addEventListener('click', () => {
-  const val = pseudoInput.value.trim();
-  if (!val) return;
-  localStorage.setItem('pseudo', val);
-  checkPseudo();
-});
-
-// Limite 1 scratch/jour
+// 7) Vérifie si déjà gratté aujourd’hui
 function checkDailyScratch() {
-  const today = new Date().toISOString().slice(0,10);
-  const last  = localStorage.getItem('lastScratchDate');
-  if (last === today) {
-    canvas.style.pointerEvents = 'none'; canvas.style.opacity = '0.5';
+  const todayISO = new Date().toISOString().slice(0,10);
+  const last = localStorage.getItem('lastScratchDate');
+  if (last === todayISO) {
+    canvas.style.pointerEvents = 'none';
+    canvas.style.opacity       = '0.5';
     rewardBtn.style.display    = 'block';
     rewardBtn.textContent      = 'Déjà gratté aujourd’hui';
   } else {
     initScratch();
-    canvas.style.pointerEvents = 'auto'; canvas.style.opacity = '1';
-    rewardBtn.style.display    = 'none'; rewardBtn.textContent = 'REWARD';
+    canvas.style.pointerEvents = 'auto';
+    canvas.style.opacity       = '1';
+    if (cardToBadge[currentCard] === null) {
+      rewardBtn.style.display    = 'block';
+      rewardBtn.textContent      = 'Déjà gratté aujourd’hui';
+    } else {
+      rewardBtn.style.display    = 'none';
+      rewardBtn.textContent      = 'REWARD';
+    }
   }
 }
 
-// Vérifie 60% effacé
+// 8) Contrôle des 60% grattés
 function checkClear() {
   const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
   let cleared = 0;
@@ -126,58 +123,85 @@ function checkClear() {
     if (data[i] === 0) cleared++;
   }
   if (cleared/(canvas.width*canvas.height)*100 >= 60) {
-    const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
-    if (!log.includes('badge1')) {
-      log.push('badge1');
-      localStorage.setItem('scratchLog', JSON.stringify(log));
+    const todayISO = new Date().toISOString().slice(0,10);
+    localStorage.setItem('lastScratchDate', todayISO);
+    const badgeId = cardToBadge[currentCard];
+    if (badgeId) {
+      const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+      if (!log.includes(badgeId)) {
+        log.push(badgeId);
+        localStorage.setItem('scratchLog', JSON.stringify(log));
+      }
     }
-    localStorage.setItem('lastScratchDate', new Date().toISOString().slice(0,10));
-    rewardBtn.style.display = 'block';
+    rewardBtn.style.display    = 'block';
+    rewardBtn.textContent      = 'Déjà gratté aujourd’hui';
     updateXPDisplay();
   }
 }
 
-// Événements de grattage
-canvas.addEventListener('mousedown', e => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); });
-canvas.addEventListener('mousemove', e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); });
-canvas.addEventListener('mouseup',   () => { drawing = false; checkClear(); });
-canvas.addEventListener('mouseleave',()=> { drawing = false; });
-canvas.addEventListener('touchstart',e => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); });
-canvas.addEventListener('touchmove', e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); });
-canvas.addEventListener('touchend',  () => { drawing = false; checkClear(); });
+// 9) Événements de grattage
+['mousedown','touchstart'].forEach(evt => {
+  canvas.addEventListener(evt, e => {
+    drawing = true;
+    const p = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x,p.y);
+  });
+});
+['mousemove','touchmove'].forEach(evt => {
+  canvas.addEventListener(evt, e => {
+    if (!drawing) return;
+    const p = getPos(e);
+    ctx.lineTo(p.x,p.y);
+    ctx.stroke();
+  });
+});
+['mouseup','mouseleave','touchend'].forEach(evt => {
+  canvas.addEventListener(evt, () => {
+    if (drawing) checkClear();
+    drawing = false;
+  });
+});
 
-// Bouton REWARD
+// 10) Clic sur “REWARD”
 ['click','touchend'].forEach(evt => {
   rewardBtn.addEventListener(evt, () => {
     if (rewardBtn.textContent !== 'REWARD') return;
     ctx.globalCompositeOperation = 'destination-out';
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
-    if (!log.includes('badge1')) {
-      log.push('badge1');
-      localStorage.setItem('scratchLog', JSON.stringify(log));
-      localStorage.setItem('lastScratchDate', new Date().toISOString().slice(0,10));
+    const badgeId = cardToBadge[currentCard];
+    if (badgeId) {
+      const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+      if (!log.includes(badgeId)) {
+        log.push(badgeId);
+        localStorage.setItem('scratchLog', JSON.stringify(log));
+      }
     }
-    rewardBtn.textContent   = 'Déjà gratté aujourd’hui';
-    rewardBtn.style.display = 'block';
+    const todayISO = new Date().toISOString().slice(0,10);
+    localStorage.setItem('lastScratchDate', todayISO);
+    rewardBtn.style.display    = 'block';
+    rewardBtn.textContent      = 'Déjà gratté aujourd’hui';
     updateXPDisplay();
     showTab('badges');
   });
 });
 
-// Affiche badges
+// 11) Rendu des badges
 function renderBadges() {
   const ul = document.getElementById('badges-list');
   ul.innerHTML = '';
-  JSON.parse(localStorage.getItem('scratchLog')||'[]').forEach(id => {
-    const li = document.createElement('li');
-    const img = document.createElement('img');
-    img.src = `images/${id}.png`; img.alt = `Badge ${id}`;
-    li.appendChild(img); ul.appendChild(li);
-  });
+  JSON.parse(localStorage.getItem('scratchLog')||'[]')
+    .forEach(id => {
+      const li  = document.createElement('li');
+      const img = document.createElement('img');
+      img.src = `images/${id}.png`;
+      img.alt = `Badge ${id}`;
+      li.appendChild(img);
+      ul.appendChild(li);
+    });
 }
 
-// Mets à jour level, barre & texte XP
+// 12) Mise à jour Level & XP
 function updateXPDisplay() {
   const log   = JSON.parse(localStorage.getItem('scratchLog')||'[]');
   const xp    = log.length * 20;
@@ -188,11 +212,11 @@ function updateXPDisplay() {
   xpText.textContent       = `XP : ${rem}/100`;
 }
 
-// Service worker
+// 13) Service Worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js')
     .catch(err => console.error(err));
 }
 
-// Démarrage
+// Démarre sur “profile”
 showTab('profile');
