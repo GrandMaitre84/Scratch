@@ -98,8 +98,11 @@ function showTab(tab) {
 tabProfile.addEventListener('click', () => showTab('profile'));
 tabPlay.addEventListener   ('click', () => showTab('play'));
 tabBadges.addEventListener ('click', () => showTab('badges'));
-resetBtn.addEventListener  ('click', () => {
-  localStorage.clear();
+
+// Réinitialisation pour tests : NE SUPPRIME PLUS startDate ni pseudo
+resetBtn.addEventListener('click', () => {
+  localStorage.removeItem('scratchLog');
+  localStorage.removeItem('lastScratchDate');
   showTab('profile');
 });
 
@@ -127,13 +130,11 @@ function getPos(e) {
 function checkDailyScratch() {
   const last = localStorage.getItem('lastScratchDate');
   if (last === todayISO) {
-    // déjà gratté aujourd’hui
     canvas.style.pointerEvents = 'none';
     canvas.style.opacity       = '0.5';
     rewardBtn.style.display    = 'block';
     rewardBtn.textContent      = 'Déjà gratté aujourd’hui';
   } else {
-    // peut gratter
     initScratch();
     canvas.style.pointerEvents = 'auto';
     canvas.style.opacity       = '1';
@@ -149,7 +150,6 @@ function checkClear() {
     if (data[i] === 0) cleared++;
   }
   if (cleared/(canvas.width*canvas.height)*100 >= 60) {
-    // affiche bouton selon badge
     if (cardToBadge[currentCard]) {
       rewardBtn.textContent = 'REWARD';
     } else {
@@ -185,16 +185,11 @@ function checkClear() {
 // ─── 12) Clic sur bouton ──────────────────────────────────────────
 ['click','touchend'].forEach(evt => {
   rewardBtn.addEventListener(evt, () => {
-    // si pas encore scratché 60%, ignore
     if (rewardBtn.textContent === 'REWARD' || rewardBtn.textContent === 'Déjà gratté aujourd’hui') {
-      // dévoile toute la carte
       ctx.globalCompositeOperation = 'destination-out';
       ctx.clearRect(0,0,canvas.width,canvas.height);
-
-      // enregistre date
       localStorage.setItem('lastScratchDate', todayISO);
 
-      // si badge, l'ajoute
       const badgeId = cardToBadge[currentCard];
       if (badgeId && rewardBtn.textContent === 'REWARD') {
         const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
@@ -204,7 +199,6 @@ function checkClear() {
         }
       }
 
-      // met à jour l’XP et onglet
       updateXPDisplay();
       showTab('badges');
     }
