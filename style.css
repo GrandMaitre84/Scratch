@@ -1,4 +1,147 @@
-html {
-  height: 100%;
-  width: 100%;
+/* reset */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100%; height: 100%;
+  background-color: #FFD1DC;  /* rose pastel global */
+  font-family: sans-serif;
+}
+
+/* container */
+.app {
+  display: flex;
+  flex-direction: column;
+  width: 100%; max-width: 375px; height: 100vh;
+  margin: 0 auto;
+  background-color: #FFD1DC;  /* rose pastel au centre */
+  position: relative;
+}
+
+/* vues */
+.view {
+  flex: 1;
+  display: none;
+  padding: 1rem;
+  overflow-y: auto;
+  background: transparent;    /* laisse voir le rose de .app */
+}
+.view.active { display: block; }
+
+/* PROFIL header */
+#profile-header {
+  padding: 1rem;
+  display: flex; flex-direction: column; align-items: flex-start;
+}
+.profile-line {
+  margin: .25rem 0; font-weight: bold;
+}
+
+/* barre XP */
+#xp-container {
+  width: 100%; max-width: 300px;
+  height: 12px; background: #EEE;
+  border-radius: 6px; overflow: hidden;
+  margin-top: .5rem;
+}
+#xp-bar {
+  height: 100%; width: 0%; background: #28A745;
+  transition: width .3s ease;
+}
+#xp-text {
+  margin-top: .25rem;
+  font-size: .9rem; color: #333;
+  width: 100%; max-width: 300px; text-align: center;
+}
+
+/* Formulaire pseudo */
+#profile-form {
+  display: flex; gap: .5rem; margin: 1rem 0; justify-content: center;
+}
+#profile-form input {
+  flex: 1; padding: .5rem; border: 1px solid #CCC; border-radius: 4px;
+  font-size: 16px;              /* empêche iOS de zoomer */
+}
+#profile-form button {
+  padding: .5rem 1rem; background: #007BFF; color: #FFF;
+  border: none; border-radius: 4px; cursor: pointer;
+  font-size: 16px;              /* cohérence typographique */
+}
+#profile-form button:hover { background: #0069D9; }
+
+/* Bouton reset */
+#reset-btn {
+  padding: .75rem 1.5rem; background: #DC3545; color: #FFF;
+  border: none; border-radius: 4px; cursor: pointer;
+  margin-bottom: 1rem; align-self: center;
+  font-size: 16px;
+}
+#reset-btn:hover { background: #C82333; }
+
+/* PLAY */
+#view-play.view.active {
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+}
+#view-play h2 {
+  text-align: center; margin-bottom: 1rem; font-size: 1.25rem;
+}
+
+/* scratch-area + canvas */
+#scratch-area {
+  position: relative;
+  width: 90vw; max-width: 375px;
+  aspect-ratio: 1125/1200;
+  border: 1px solid #AAA; border-radius: 8px;
+  overflow: hidden; background: #EEE;
+}
+#scratch-area img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; z-index: 1;
+}
+#scratchCanvas {
+  position: absolute; inset: 0; cursor: crosshair;
+  touch-action: none; z-index: 2;
+}
+
+/* bouton REWARD */
+#reward-btn {
+  display: none; margin-top: 1rem;
+  padding: .5rem 1rem; background: #28A745; color: #FFF;
+  border: none; border-radius: 4px; width: 80%; max-width: 300px;
+  cursor: pointer; font-size: 16px;
+}
+#reward-btn:hover { background: #218838; }
+
+/* onglets en bas */
+.tabs {
+  display: flex; border-top: 1px solid #DDD;
+  background: transparent; position: sticky; bottom: 0;
+}
+.tab {
+  flex: 1; padding: .75rem 0;
+  background: #FFF;         /* fond blanc pour les onglets */
+  color: #000;              /* texte noir */
+  border: none; cursor: pointer;
+  text-align: center; user-select: none;
+  font-size: 16px;
+}
+.tab.active {
+  background: #F0F0F0;      /* léger gris pour l’actif */
+  font-weight: bold;
+}
+
+/* REWARDS */
+#view-badges h2 {
+  text-align: center; margin-bottom: 1rem;
+}
+#badges-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px; list-style: none; padding: 0; margin: 0;
+}
+#badges-list li {
+  display: flex; justify-content: center; align-items: center;
+  height: calc((100vh - 4rem /* header */ - 3rem /* tabs */) / 3);
+}
+#badges-list li img {
+  max-width: 100%; max-height: 100%; object-fit: contain;
 }

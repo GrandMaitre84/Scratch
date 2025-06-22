@@ -1,16 +1,66 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width">
-  <title>replit</title>
-  <link href="style.css" rel="stylesheet" type="text/css" />
-</head>
+  <meta charset="utf-8"/>
+  <!-- Empêche le zoom sur iOS lors du focus input -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Scratch & Badges</title>
+  <link rel="stylesheet" href="style.css"/>
 
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#28a745">
+  <!-- Icône iOS -->
+  <link rel="apple-touch-icon" sizes="180x180" href="images/icon-180.png">
+</head>
 <body>
-  Hello world
+  <div class="app">
+
+    <!-- PROFIL -->
+    <div id="view-profile" class="view">
+      <div id="profile-header">
+        <p id="pseudo-display" class="profile-line"></p>
+        <p id="level-display" class="profile-line">Level : 0</p>
+        <div id="xp-container">
+          <div id="xp-bar"></div>
+        </div>
+        <p id="xp-text">XP : 0/100</p>
+      </div>
+
+      <!-- Formulaire de saisie du pseudo -->
+      <div id="profile-form">
+        <input id="pseudo-input" type="text" placeholder="Entrez votre pseudo" />
+        <button id="pseudo-btn">Valider</button>
+      </div>
+
+      <!-- Bouton reset en bas pour tests -->
+      <button id="reset-btn">Réinitialiser l’app</button>
+    </div>
+
+    <!-- PLAY -->
+    <div id="view-play" class="view">
+      <h2>SCRATCH</h2>
+      <div id="scratch-area">
+        <img id="scratch-image" src="images/card1.png" alt="Carte à gratter">
+        <canvas id="scratchCanvas"></canvas>
+      </div>
+      <button id="reward-btn">REWARD</button>
+    </div>
+
+    <!-- REWARDS -->
+    <div id="view-badges" class="view">
+      <h2>MY REWARDS</h2>
+      <ul id="badges-list"></ul>
+    </div>
+
+    <!-- onglets en bas -->
+    <div class="tabs">
+      <button id="tab-profile" class="tab active">PROFIL</button>
+      <button id="tab-play"    class="tab">PLAY</button>
+      <button id="tab-badges"  class="tab">REWARDS</button>
+    </div>
+
+  </div>
   <script src="script.js"></script>
 </body>
-
 </html>
