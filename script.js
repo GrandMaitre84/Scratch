@@ -1,4 +1,4 @@
-// 1) Liste des cartes et mapping carte→badge
+// ─── 1) Liste des cartes et mapping carte→badge ────────────────────
 const cards = ['card1', 'card2', 'card3', 'card4'];
 const cardToBadge = {
   'card1': 'badge1',
@@ -7,18 +7,20 @@ const cardToBadge = {
   'card4': 'badge4'
 };
 
-// 2) Sélection de la carte
-// ─────────────── Mode statique pour toujours afficher card1 ───────
-const currentCard = cards[0];
-// ───────────────────────────────────────────────────────────────────
-// Pour réactiver le cycle quotidien, remplace la ligne ci-dessus par :
-// const todayISO    = new Date().toISOString().slice(0,10);
-// const daySeed     = parseInt(todayISO.replace(/-/g,''),10);
-// const currentCard = cards[ daySeed % cards.length ];
+// ─── 2) Sélection « une carte par jour » depuis la première ouverture ───
+let start = localStorage.getItem('startDate');
+const todayISO = new Date().toISOString().slice(0,10);
+if (!start) {
+  localStorage.setItem('startDate', todayISO);
+  start = todayISO;
+}
+const startDate   = new Date(start);
+const todayDate   = new Date(todayISO);
+const msPerDay    = 1000 * 60 * 60 * 24;
+const daysElapsed = Math.floor((todayDate - startDate) / msPerDay);
+const currentCard = cards[ daysElapsed % cards.length ];
 
-
-
-// 3) Récupération du DOM
+// ─── 3) Récupération du DOM ───────────────────────────────────────
 const tabProfile   = document.getElementById('tab-profile');
 const tabPlay      = document.getElementById('tab-play');
 const tabBadges    = document.getElementById('tab-badges');
@@ -36,31 +38,30 @@ const pseudoSpan   = document.getElementById('pseudo-display');
 const levelDisplay = document.getElementById('level-display');
 const xpBar        = document.getElementById('xp-bar');
 const xpText       = document.getElementById('xp-text');
+const scratchImage = document.getElementById('scratch-image');
 
 let drawing = false;
 
-
-// ─── Gestion du pseudo ───────────────────────────────────────────
+// ─── 4) Gestion du pseudo ─────────────────────────────────────────
 function checkPseudo() {
-  const profileForm = document.getElementById('profile-form');
+  const form = document.getElementById('profile-form');
   const stored = localStorage.getItem('pseudo');
   if (stored) {
-    profileForm.style.display = 'none';
-    pseudoSpan.textContent    = stored;
+    form.style.display = 'none';
+    pseudoSpan.textContent = stored;
   } else {
-    profileForm.style.display = 'flex';
-    pseudoSpan.textContent    = '';
+    form.style.display = 'flex';
+    pseudoSpan.textContent = '';
   }
 }
 pseudoBtn.addEventListener('click', () => {
-  const val = pseudoInput.value.trim();
-  if (!val) return;
-  localStorage.setItem('pseudo', val);
+  const v = pseudoInput.value.trim();
+  if (!v) return;
+  localStorage.setItem('pseudo', v);
   checkPseudo();
 });
 
-
-// ─── Fonction de bascule d’onglet ────────────────────────────────
+// ─── 5) Bascule d’onglet ───────────────────────────────────────────
 function showTab(tab) {
   [viewProfile, viewPlay, viewBadges].forEach(v => v.classList.remove('active'));
   [tabProfile, tabPlay, tabBadges].forEach(t => t.classList.remove('active'));
@@ -73,7 +74,7 @@ function showTab(tab) {
   if (tab === 'play') {
     viewPlay.classList.add('active');
     tabPlay.classList.add('active');
-    document.getElementById('scratch-image').src = `images/${currentCard}.png`;
+    scratchImage.src = `images/${currentCard}.png`;
     checkDailyScratch();
   }
   if (tab === 'badges') {
@@ -82,18 +83,15 @@ function showTab(tab) {
     renderBadges();
   }
 }
-
-// Écouteurs onglets et reset
 tabProfile.addEventListener('click', () => showTab('profile'));
 tabPlay.addEventListener   ('click', () => showTab('play'));
 tabBadges.addEventListener ('click', () => showTab('badges'));
-resetBtn.addEventListener('click', () => {
+resetBtn.addEventListener  ('click', () => {
   localStorage.clear();
   showTab('profile');
 });
 
-
-// ─── Initialisation du canvas de grattage ────────────────────────
+// ─── 6) Initialisation du canvas ───────────────────────────────────
 function initScratch() {
   const w = area.clientWidth, h = area.clientHeight;
   canvas.width = w; canvas.height = h;
@@ -105,8 +103,7 @@ function initScratch() {
 }
 window.addEventListener('resize', initScratch);
 
-
-// ─── Récupération de la position du curseur ──────────────────────
+// ─── 7) Position du curseur ───────────────────────────────────────
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
   return {
@@ -115,31 +112,27 @@ function getPos(e) {
   };
 }
 
-
-// ─── Limite un scratch par jour & affichage du bouton ────────────
+// ─── 8) Limite 1 scratch/jour & cartes sans badge ─────────────────
 function checkDailyScratch() {
   const last = localStorage.getItem('lastScratchDate');
-  if (last === todayISO) {
+  const hasBadge = cardToBadge[currentCard] !== null;
+
+  if (last === todayISO || !hasBadge) {
+    // soit déjà gratté aujourd’hui, soit pas de badge → bloquer
     canvas.style.pointerEvents = 'none';
     canvas.style.opacity       = '0.5';
     rewardBtn.style.display    = 'block';
     rewardBtn.textContent      = 'Déjà gratté aujourd’hui';
   } else {
+    // carte à gratter
     initScratch();
     canvas.style.pointerEvents = 'auto';
     canvas.style.opacity       = '1';
-    if (cardToBadge[currentCard] === null) {
-      rewardBtn.style.display    = 'block';
-      rewardBtn.textContent      = 'Déjà gratté aujourd’hui';
-    } else {
-      rewardBtn.style.display    = 'none';
-      rewardBtn.textContent      = 'REWARD';
-    }
+    rewardBtn.style.display    = 'none';
   }
 }
 
-
-// ─── Vérification du grattage à 60% ──────────────────────────────
+// ─── 9) Vérification 60% gratté ───────────────────────────────────
 function checkClear() {
   const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
   let cleared = 0;
@@ -147,23 +140,13 @@ function checkClear() {
     if (data[i] === 0) cleared++;
   }
   if (cleared/(canvas.width*canvas.height)*100 >= 60) {
-    localStorage.setItem('lastScratchDate', todayISO);
-    const badgeId = cardToBadge[currentCard];
-    if (badgeId) {
-      const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
-      if (!log.includes(badgeId)) {
-        log.push(badgeId);
-        localStorage.setItem('scratchLog', JSON.stringify(log));
-      }
-    }
     rewardBtn.style.display = 'block';
-    rewardBtn.textContent   = 'Déjà gratté aujourd’hui';
-    updateXPDisplay();
+    rewardBtn.textContent   = 'REWARD';
+    canvas.style.pointerEvents = 'none';
   }
 }
 
-
-// ─── Événements de grattage ─────────────────────────────────────
+// ─── 10) Événements de grattage ─────────────────────────────────
 ['mousedown','touchstart'].forEach(evt => {
   canvas.addEventListener(evt, e => {
     drawing = true;
@@ -185,13 +168,16 @@ function checkClear() {
   });
 });
 
-
-// ─── Clic sur “REWARD” ───────────────────────────────────────────
+// ─── 11) Clic sur “REWARD” ───────────────────────────────────────
 ['click','touchend'].forEach(evt => {
   rewardBtn.addEventListener(evt, () => {
     if (rewardBtn.textContent !== 'REWARD') return;
+    // dévoile
     ctx.globalCompositeOperation = 'destination-out';
     ctx.clearRect(0,0,canvas.width,canvas.height);
+    // date du jour
+    localStorage.setItem('lastScratchDate', todayISO);
+    // ajout badge si défini
     const badgeId = cardToBadge[currentCard];
     if (badgeId) {
       const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
@@ -200,30 +186,25 @@ function checkClear() {
         localStorage.setItem('scratchLog', JSON.stringify(log));
       }
     }
-    localStorage.setItem('lastScratchDate', todayISO);
-    rewardBtn.style.display = 'block';
-    rewardBtn.textContent   = 'Déjà gratté aujourd’hui';
+    rewardBtn.textContent = 'Déjà gratté aujourd’hui';
     updateXPDisplay();
     showTab('badges');
   });
 });
 
-
-// ─── Affichage des badges ────────────────────────────────────────
+// ─── 12) Affichage des badges ─────────────────────────────────────
 function renderBadges() {
   const ul = document.getElementById('badges-list');
   ul.innerHTML = '';
   JSON.parse(localStorage.getItem('scratchLog')||'[]').forEach(id => {
-    const li = document.createElement('li');
+    const li  = document.createElement('li');
     const img = document.createElement('img');
-    img.src = `images/${id}.png`;
-    img.alt = `Badge ${id}`;
+    img.src = `images/${id}.png`; img.alt = `Badge ${id}`;
     li.appendChild(img); ul.appendChild(li);
   });
 }
 
-
-// ─── Mise à jour Level & XP ─────────────────────────────────────
+// ─── 13) Mise à jour Level & XP ──────────────────────────────────
 function updateXPDisplay() {
   const log   = JSON.parse(localStorage.getItem('scratchLog')||'[]');
   const xp    = log.length * 20;
@@ -234,12 +215,10 @@ function updateXPDisplay() {
   xpText.textContent       = `XP : ${rem}/100`;
 }
 
-
-// ─── Service Worker ──────────────────────────────────────────────
+// ─── 14) Service Worker ──────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(err => console.error(err));
 }
 
-
-// ─── Démarrage sur PROFIL ────────────────────────────────────────
+// démarrage sur PROFIL
 showTab('profile');
