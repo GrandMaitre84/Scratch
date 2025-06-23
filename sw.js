@@ -4,13 +4,12 @@
 const CACHE_NAME = 'scratch-cache-v4';
 
 const ASSETS = [
-  '/',
+  '/', 
   '/index.html',
   '/style.css',
   '/script.js',
   '/sw.js',
   '/manifest.json',
-  '/animations/intro.json',    // ← ajoute ton animation Lottie ici
   '/images/icon-180.png',
   '/images/card1.png',
   '/images/card2.png',
@@ -25,8 +24,8 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 // 3) Activation : on supprime les anciens caches + clients.claim pour contrôler immédiatement
@@ -38,41 +37,38 @@ self.addEventListener('activate', event => {
           .filter(key => key !== CACHE_NAME)
           .map(key => caches.delete(key))
       )
-    )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 // 4) Fetch : navigation en "network-first", autres assets en "cache-first"
 self.addEventListener('fetch', event => {
-  const req = event.request;
-
-  // Si c'est une navigation (chargement de page)
-  if (req.mode === 'navigate') {
+  if (event.request.mode === 'navigate') {
+    // pour les navigations (index.html), on préfère le réseau
     event.respondWith(
-      fetch(req)
+      fetch(event.request)
         .then(response => {
-          // Met à jour le cache avec la nouvelle index.html
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
-          return response;
+          // on met à jour le cache avec la nouvelle index.html
+          return caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, response.clone());
+            return response;
+          });
         })
         .catch(() =>
-          // En cas d’échec réseau, on sert la version cache
-          caches.match(req)
+          // en cas de coupure réseau, on sert la version cache
+          caches.match(event.request)
         )
     );
     return;
   }
-
-  // Pour tous les autres fichiers : cache-first
+  // pour tout le reste : cache-first
   event.respondWith(
-    caches.match(req).then(cached => {
-      return cached || fetch(req).then(response => {
-        // On met en cache pour la prochaine fois
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
-        return response;
+    caches.match(event.request).then(cached => {
+      return cached || fetch(event.request).then(response => {
+        return caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, response.clone());
+          return response;
+        });
       });
     })
   );
