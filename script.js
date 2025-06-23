@@ -1,3 +1,18 @@
+// ─── 0) Intro Lottie ───────────────────────────────────────────────
+const introContainer = document.getElementById('lottie-intro');
+lottie.loadAnimation({
+  container: introContainer,
+  renderer: 'svg',
+  loop: false,
+  autoplay: true,
+  path: 'animations/intro.json' // <-- votre fichier JSON
+});
+// Masquer après 3s
+setTimeout(() => {
+  introContainer.style.display = 'none';
+}, 3000);
+
+
 // ─── 1) Liste des cartes et mapping carte→badge ────────────────────
 const cards = ['card1', 'card2', 'card3', 'card4'];
 const cardToBadge = {
@@ -98,7 +113,7 @@ tabProfile.addEventListener('click', () => showTab('profile'));
 tabPlay.addEventListener   ('click', () => showTab('play'));
 tabBadges.addEventListener ('click', () => showTab('badges'));
 
-// Réinitialisation pour tests : supprime scratchLog, lastScratchDate, xpTotal, et pseudo
+// ─── Reset pour tests ─────────────────────────────────────────────
 resetBtn.addEventListener('click', () => {
   localStorage.removeItem('scratchLog');
   localStorage.removeItem('lastScratchDate');
@@ -107,7 +122,7 @@ resetBtn.addEventListener('click', () => {
   showTab('profile');
 });
 
-// ─── 7) Initialisation du canvas ───────────────────────────────────
+// ─── 7) Init canvas ───────────────────────────────────────────────
 function initScratch() {
   const w = area.clientWidth, h = area.clientHeight;
   canvas.width = w; canvas.height = h;
@@ -143,7 +158,7 @@ function checkDailyScratch() {
   }
 }
 
-// ─── 10) Vérification du grattage à 60% ────────────────────────────
+// ─── 10) Vérif 60% ────────────────────────────────────────────────
 function checkClear() {
   const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
   let cleared = 0;
@@ -151,12 +166,10 @@ function checkClear() {
     if (data[i] === 0) cleared++;
   }
   if (cleared/(canvas.width*canvas.height)*100 >= 60) {
-    // ajoute toujours 20 XP
     const xpTotal = parseInt(localStorage.getItem('xpTotal')||'0',10) + 20;
     localStorage.setItem('xpTotal', xpTotal);
     updateXPDisplay();
 
-    // affiche bouton selon badge
     if (cardToBadge[currentCard]) {
       rewardBtn.textContent = 'REWARD';
     } else {
@@ -189,16 +202,14 @@ function checkClear() {
   });
 });
 
-// ─── 12) Clic sur bouton ──────────────────────────────────────────
+// ─── 12) Clic REWARD ──────────────────────────────────────────────
 ['click','touchend'].forEach(evt => {
   rewardBtn.addEventListener(evt, () => {
     if (rewardBtn.textContent === 'REWARD' || rewardBtn.textContent === 'Déjà gratté aujourd’hui') {
-      // dévoile toute la carte
       ctx.globalCompositeOperation = 'destination-out';
       ctx.clearRect(0,0,canvas.width,canvas.height);
-      // enregistre date
       localStorage.setItem('lastScratchDate', todayISO);
-      // ajoute le badge si présent
+
       const badgeId = cardToBadge[currentCard];
       if (badgeId && rewardBtn.textContent === 'REWARD') {
         const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
@@ -212,32 +223,25 @@ function checkClear() {
   });
 });
 
-// ─── 13) Affichage des badges (30 emplacements numérotés) ───────────
+// ─── 13) Affichage des badges ─────────────────────────────────────
 function renderBadges() {
   const ul = document.getElementById('badges-list');
   ul.innerHTML = '';
-
   const SLOTS = 30;
   const won   = JSON.parse(localStorage.getItem('scratchLog') || '[]');
-
   for (let i = 0; i < SLOTS; i++) {
     const li = document.createElement('li');
     li.classList.add('badge-slot');
-
-    // numéro de case en haut à gauche
     const num = document.createElement('span');
     num.classList.add('badge-slot-number');
     num.textContent = i + 1;
     li.appendChild(num);
-
-    // si badge gagné à cet index, on l'affiche
     if (won[i]) {
       const img = document.createElement('img');
       img.src = `images/${won[i]}.png`;
       img.alt = `Badge ${won[i]}`;
       li.appendChild(img);
     }
-
     ul.appendChild(li);
   }
 }
@@ -247,5 +251,5 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(err => console.error(err));
 }
 
-// Démarrage sur PROFIL
+// Démarrage
 showTab('profile');
