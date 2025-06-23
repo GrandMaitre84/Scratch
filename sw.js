@@ -1,15 +1,16 @@
 // sw.js
 
 // 1) Incrémentez cette version à chaque mise à jour
-const CACHE_NAME = 'scratch-cache-v3';
+const CACHE_NAME = 'scratch-cache-v4';
 
 const ASSETS = [
-  '/', 
+  '/',
   '/index.html',
   '/style.css',
   '/script.js',
   '/sw.js',
   '/manifest.json',
+  '/animations/intro.json',    // ← ajoute ton animation Lottie ici
   '/images/icon-180.png',
   '/images/card1.png',
   '/images/card2.png',
@@ -44,20 +45,21 @@ self.addEventListener('activate', event => {
 
 // 4) Fetch : navigation en "network-first", autres assets en "cache-first"
 self.addEventListener('fetch', event => {
+  const req = event.request;
+
   // Si c'est une navigation (chargement de page)
-  if (event.request.mode === 'navigate') {
+  if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request)
+      fetch(req)
         .then(response => {
           // Met à jour le cache avec la nouvelle index.html
-          return caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, response.clone());
-            return response;
-          });
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+          return response;
         })
         .catch(() =>
           // En cas d’échec réseau, on sert la version cache
-          caches.match(event.request)
+          caches.match(req)
         )
     );
     return;
@@ -65,13 +67,12 @@ self.addEventListener('fetch', event => {
 
   // Pour tous les autres fichiers : cache-first
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).then(response => {
+    caches.match(req).then(cached => {
+      return cached || fetch(req).then(response => {
         // On met en cache pour la prochaine fois
-        return caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, response.clone());
-          return response;
-        });
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+        return response;
       });
     })
   );
