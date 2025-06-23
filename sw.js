@@ -1,7 +1,7 @@
 // sw.js
 
 // 1) Incrémentez cette version à chaque mise à jour
-const CACHE_NAME = 'scratch-cache-v2';
+const CACHE_NAME = 'scratch-cache-v3';
 
 const ASSETS = [
   '/', 
