@@ -38,7 +38,7 @@ function startScratchSfx(){
   scratchSource.start(0);
 }
 function stopScratchSfx(){
-  if(!scratchSource) return;
+  if(!scratchSource)return;
   scratchSource.stop();
   scratchSource = null;
 }
@@ -173,12 +173,9 @@ function updateXPDisplay(){
   const xpTotal = parseInt(localStorage.getItem('xpTotal')||'0',10);
   const level   = Math.floor(xpTotal / 100);
   const rem     = xpTotal % 100;
-
-  // === CORRECTION ICI ===
   levelDisplay.textContent = level;
-
-  xpBar.style.width  = `${rem}%`;
-  xpText.textContent = `${rem}/100`;
+  xpBar.style.width        = `${rem}%`;
+  xpText.textContent       = `${rem}/100`;
 }
 
 // ─── 7) Onglets (SFX) ─────────────────────────────────────────────
@@ -263,12 +260,13 @@ function checkDailyScratch(){
   }
 }
 
-// ───12) Vérif 60% ────────────────────────────────────────────────
+// ───12) Vérif 70% ────────────────────────────────────────────────
 function checkClear(){
   const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
   let cleared=0;
   for(let i=3; i<data.length; i+=4) if(data[i]===0) cleared++;
-  if(cleared/(canvas.width*canvas.height)*100 >= 60){
+  // Seuil augmenté à 70%
+  if(cleared/(canvas.width*canvas.height)*100 >= 70){
     // incrémente scratchCount
     const cnt = parseInt(localStorage.getItem('scratchCount')||'0',10) + 1;
     localStorage.setItem('scratchCount', cnt);
