@@ -113,16 +113,25 @@ html, body {
 
 /* onglets en bas */
 .tabs {
-  display: flex; border-top: 1px solid #DDD;
-  background: transparent; position: sticky; bottom: 0;
+  display: flex;
+  border-top: 1px solid #DDD;
+  background: transparent;
+  position: sticky;
+  bottom: 0;
+  /* remonte la barre au-dessus de la home-indicator iOS */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 .tab {
-  flex: 1; padding: .75rem 0;
+  flex: 1;
+  /* augmente la zone tactile pour le pouce */
+  padding: 1rem 0;
   background: #FFF;         /* fond blanc pour les onglets */
   color: #000;              /* texte noir */
-  border: none; cursor: pointer;
-  text-align: center; user-select: none;
-  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  user-select: none;
+  font-size: 18px;          /* texte un peu plus gros */
 }
 .tab.active {
   background: #F0F0F0;      /* léger gris pour l’actif */
