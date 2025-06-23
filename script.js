@@ -93,7 +93,7 @@ const xpBar         = document.getElementById('xp-bar');
 const xpText        = document.getElementById('xp-text');
 const scratchImage  = document.getElementById('scratch-image');
 const profileForm   = document.getElementById('profile-form');
-const profileHeader = document.getElementById('profile-header');
+const profileStats  = document.querySelector('.profile-stats');
 const cardsDisplay  = document.getElementById('cards-scratched');
 const rewardsDisplay= document.getElementById('rewards-count');
 
@@ -142,11 +142,11 @@ function checkPseudo(){
   const stored = localStorage.getItem('pseudo');
   if(stored){
     profileForm.style.display   = 'none';
-    profileHeader.style.display = 'flex';
+    profileStats.style.display  = 'flex';
     pseudoSpan.textContent      = stored;
   } else {
     profileForm.style.display   = 'flex';
-    profileHeader.style.display = 'none';
+    profileStats.style.display  = 'none';
     pseudoSpan.textContent      = '';
   }
 }
@@ -164,8 +164,8 @@ function updateProfileStats() {
   const xpTotal      = parseInt(localStorage.getItem('xpTotal')||'0',10);
   const scratched    = Math.floor(xpTotal/20);
   const rewardsCount = JSON.parse(localStorage.getItem('scratchLog')||'[]').length;
-  document.getElementById('cards-scratched').textContent = scratched;
-  document.getElementById('rewards-count').textContent  = rewardsCount;
+  cardsDisplay.textContent     = scratched;
+  rewardsDisplay.textContent   = rewardsCount;
 }
 
 // ─── 6) Affichage XP & Level ──────────────────────────────────────
@@ -183,20 +183,20 @@ function showTab(tab){
   [viewProfile,viewPlay,viewBadges].forEach(v=>v.classList.remove('active'));
   [tabProfile,tabPlay,tabBadges].forEach(t=>t.classList.remove('active'));
   playSfx('tab');
-  if (tab==='profile') {
+  if(tab==='profile'){
     viewProfile.classList.add('active');
     tabProfile.classList.add('active');
     checkPseudo();
     updateXPDisplay();
-    updateProfileStats();        // ← appel ajouté ici
+    updateProfileStats();
   }
-  if (tab==='play') {
+  if(tab==='play'){
     viewPlay.classList.add('active');
     tabPlay.classList.add('active');
     scratchImage.src = `images/${currentCard}.png`;
     checkDailyScratch();
   }
-  if (tab==='badges') {
+  if(tab==='badges'){
     viewBadges.classList.add('active');
     tabBadges.classList.add('active');
     renderBadges();
@@ -213,6 +213,7 @@ resetBtn.addEventListener('click',()=>{
   localStorage.removeItem('xpTotal');
   localStorage.removeItem('pseudo');
   localStorage.removeItem('scratchCount');
+  checkPseudo();
   showTab('profile');
 });
 
