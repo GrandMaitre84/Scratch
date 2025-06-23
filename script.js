@@ -1,5 +1,5 @@
 // ─── WebAudio setup pour ultra-low-latency ─────────────────────────
-const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 document.body.addEventListener('touchstart', () => {
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }, { once: true });
@@ -46,8 +46,10 @@ function stopScratchSfx() {
 // ─── 0) Intro Lottie ───────────────────────────────────────────────
 const introContainer = document.getElementById('lottie-intro');
 const introAnim = lottie.loadAnimation({
-  container: introContainer, renderer: 'svg',
-  loop: false, autoplay: true,
+  container: introContainer,
+  renderer: 'svg',
+  loop: false,
+  autoplay: true,
   path: 'animations/intro.json'
 });
 introAnim.addEventListener('complete', () => {
@@ -72,26 +74,66 @@ const daysElapsed = Math.floor((new Date(todayISO) - new Date(start)) / 86400000
 const currentCard = cards[daysElapsed % cards.length];
 
 // ─── 3) DOM ───────────────────────────────────────────────────────
-const tabProfile   = document.getElementById('tab-profile');
-const tabPlay      = document.getElementById('tab-play');
-const tabBadges    = document.getElementById('tab-badges');
-const viewProfile  = document.getElementById('view-profile');
-const viewPlay     = document.getElementById('view-play');
-const viewBadges   = document.getElementById('view-badges');
-const resetBtn     = document.getElementById('reset-btn');
-const area         = document.getElementById('scratch-area');
-const canvas       = document.getElementById('scratchCanvas');
-const ctx          = canvas.getContext('2d');
-const rewardBtn    = document.getElementById('reward-btn');
-const pseudoInput  = document.getElementById('pseudo-input');
-const pseudoBtn    = document.getElementById('pseudo-btn');
-const pseudoSpan   = document.getElementById('pseudo-display');
-const levelDisplay = document.getElementById('level-display');
-const xpBar        = document.getElementById('xp-bar');
-const xpText       = document.getElementById('xp-text');
-const scratchImage = document.getElementById('scratch-image');
-const profileForm  = document.getElementById('profile-form');
-const profileHeader= document.getElementById('profile-header');
+const tabProfile    = document.getElementById('tab-profile');
+const tabPlay       = document.getElementById('tab-play');
+const tabBadges     = document.getElementById('tab-badges');
+const viewProfile   = document.getElementById('view-profile');
+const viewPlay      = document.getElementById('view-play');
+const viewBadges    = document.getElementById('view-badges');
+const resetBtn      = document.getElementById('reset-btn');
+const area          = document.getElementById('scratch-area');
+const canvas        = document.getElementById('scratchCanvas');
+const ctx           = canvas.getContext('2d');
+const rewardBtn     = document.getElementById('reward-btn');
+const pseudoInput   = document.getElementById('pseudo-input');
+const pseudoBtn     = document.getElementById('pseudo-btn');
+const pseudoSpan    = document.getElementById('pseudo-display');
+const levelDisplay  = document.getElementById('level-display');
+const xpBar         = document.getElementById('xp-bar');
+const xpText        = document.getElementById('xp-text');
+const scratchImage  = document.getElementById('scratch-image');
+const profileForm   = document.getElementById('profile-form');
+const profileHeader = document.getElementById('profile-header');
+
+// statut de grattage / NEXT SCRATCH TOMORROW
+const scratchStatus = document.createElement('p');
+scratchStatus.id = 'scratch-status';
+Object.assign(scratchStatus.style, {
+  display: 'none',
+  margin: '1rem auto 0',
+  padding: '.5rem 1rem',
+  background: '#28A745',
+  color: '#FFF',
+  borderRadius: '4px',
+  width: '80%',
+  maxWidth: '300px',
+  textAlign: 'center',
+  cursor: 'default'
+});
+rewardBtn.insertAdjacentElement('afterend', scratchStatus);
+
+// bouton DONE (même look que REWARD)
+const doneBtn = document.createElement('button');
+doneBtn.id = 'done-btn';
+doneBtn.textContent = 'DONE';
+Object.assign(doneBtn.style, {
+  display: 'none',
+  margin: '1rem auto 0',
+  padding: '.5rem 1rem',
+  background: '#28A745',
+  color: '#FFF',
+  border: 'none',
+  borderRadius: '4px',
+  width: '80%',
+  maxWidth: '300px',
+  cursor: 'pointer',
+  fontSize: '16px',
+  transition: 'background .2s ease',
+  display: 'none'
+});
+doneBtn.addEventListener('mouseenter', () => doneBtn.style.background = '#218838');
+doneBtn.addEventListener('mouseleave', () => doneBtn.style.background = '#28A745');
+rewardBtn.insertAdjacentElement('afterend', doneBtn);
 
 let drawing = false;
 
@@ -109,7 +151,7 @@ function checkPseudo() {
   }
 }
 pseudoBtn.addEventListener('click', () => {
-  playSfx('tab');    // ← Joue tab-click aussi au validateur
+  playSfx('tab');
   playSfx('validate');
   const v = pseudoInput.value.trim();
   if (!v) return;
@@ -119,9 +161,9 @@ pseudoBtn.addEventListener('click', () => {
 
 // ─── 5) XP & Level ────────────────────────────────────────────────
 function updateXPDisplay() {
-  const xpTotal = parseInt(localStorage.getItem('xpTotal')||'0',10);
-  const level   = Math.floor(xpTotal/100);
-  const rem     = xpTotal%100;
+  const xpTotal = parseInt(localStorage.getItem('xpTotal') || '0', 10);
+  const level   = Math.floor(xpTotal / 100);
+  const rem     = xpTotal % 100;
   levelDisplay.textContent = `Level of love : ${level}`;
   xpBar.style.width        = `${rem}%`;
   xpText.textContent       = `XP : ${rem}/100`;
@@ -132,29 +174,29 @@ function showTab(tab) {
   [viewProfile,viewPlay,viewBadges].forEach(v=>v.classList.remove('active'));
   [tabProfile,tabPlay,tabBadges].forEach(t=>t.classList.remove('active'));
   playSfx('tab');
-  if(tab==='profile'){
+  if (tab==='profile') {
     viewProfile.classList.add('active');
     tabProfile.classList.add('active');
     checkPseudo(); updateXPDisplay();
   }
-  if(tab==='play'){
+  if (tab==='play') {
     viewPlay.classList.add('active');
     tabPlay.classList.add('active');
     scratchImage.src = `images/${currentCard}.png`;
     checkDailyScratch();
   }
-  if(tab==='badges'){
+  if (tab==='badges') {
     viewBadges.classList.add('active');
     tabBadges.classList.add('active');
     renderBadges();
   }
 }
 tabProfile.addEventListener('click',()=>showTab('profile'));
-tabPlay.addEventListener('click',   ()=>showTab('play'));
-tabBadges.addEventListener('click', ()=>showTab('badges'));
+tabPlay.addEventListener   ('click',()=>showTab('play'));
+tabBadges.addEventListener ('click',()=>showTab('badges'));
 
 // ─── 7) Reset tests ──────────────────────────────────────────────
-resetBtn.addEventListener('click',()=>{
+resetBtn.addEventListener('click', ()=>{
   localStorage.removeItem('scratchLog');
   localStorage.removeItem('lastScratchDate');
   localStorage.removeItem('xpTotal');
@@ -165,11 +207,11 @@ resetBtn.addEventListener('click',()=>{
 // ─── 8) Canvas ───────────────────────────────────────────────────
 function initScratch(){
   const w=area.clientWidth, h=area.clientHeight;
-  canvas.width=w; canvas.height=h;
-  ctx.globalCompositeOperation='source-over';
-  ctx.fillStyle='#999'; ctx.fillRect(0,0,w,h);
-  ctx.globalCompositeOperation='destination-out';
-  ctx.lineWidth=30; ctx.lineCap='round';
+  canvas.width = w; canvas.height = h;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#999'; ctx.fillRect(0,0,w,h);
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.lineWidth = 30; ctx.lineCap = 'round';
 }
 window.addEventListener('resize', initScratch);
 
@@ -182,38 +224,51 @@ function getPos(e){
   };
 }
 
-// ───10) 1 scratch/jour ───────────────────────────────────────────
+// ───10) Limite 1 scratch/jour ────────────────────────────────────
 function checkDailyScratch(){
-  const last=localStorage.getItem('lastScratchDate');
-  if(last===todayISO){
-    canvas.style.pointerEvents='none';
-    canvas.style.opacity='0.5';
-    rewardBtn.style.display='block';
-    rewardBtn.textContent='Déjà gratté aujourd’hui';
+  const last = localStorage.getItem('lastScratchDate');
+  if (last===todayISO){
+    canvas.style.pointerEvents = 'none';
+    canvas.style.opacity       = '0.5';
+    rewardBtn.style.display    = 'none';
+    doneBtn.style.display      = 'none';
+    scratchStatus.textContent  = 'NEXT SCRATCH TOMORROW';
+    scratchStatus.style.display= 'block';
   } else {
     initScratch();
-    canvas.style.pointerEvents='auto';
-    canvas.style.opacity='1';
-    rewardBtn.style.display='none';
+    canvas.style.pointerEvents = 'auto';
+    canvas.style.opacity       = '1';
+    rewardBtn.style.display    = 'none';
+    doneBtn.style.display      = 'none';
+    scratchStatus.style.display= 'none';
   }
 }
 
 // ───11) Vérif 60% ────────────────────────────────────────────────
 function checkClear(){
-  const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
   let cleared=0;
   for(let i=3;i<data.length;i+=4) if(data[i]===0) cleared++;
   if(cleared/(canvas.width*canvas.height)*100>=60){
-    const xpTotal=parseInt(localStorage.getItem('xpTotal')||'0',10)+20;
-    localStorage.setItem('xpTotal',xpTotal);
+    // ajoute XP
+    const xpTotal = parseInt(localStorage.getItem('xpTotal')||'0',10)+20;
+    localStorage.setItem('xpTotal', xpTotal);
     updateXPDisplay();
-    rewardBtn.textContent=cardToBadge[currentCard]?'REWARD':'Déjà gratté aujourd’hui';
-    rewardBtn.style.display='block';
+    if(cardToBadge[currentCard]){
+      rewardBtn.textContent  = 'REWARD';
+      rewardBtn.style.display= 'block';
+      doneBtn.style.display  = 'none';
+      scratchStatus.style.display = 'none';
+    } else {
+      doneBtn.style.display       = 'block';
+      rewardBtn.style.display     = 'none';
+      scratchStatus.style.display = 'none';
+    }
     canvas.style.pointerEvents='none';
   }
 }
 
-// ───12) Événements grattage (SFX boucle) ─────────────────────────
+// ───12) Évènements grattage (SFX boucle) ─────────────────────────
 ['mousedown','touchstart'].forEach(evt=>{
   canvas.addEventListener(evt,e=>{
     startScratchSfx();
@@ -240,30 +295,38 @@ function checkClear(){
 // ───13) Clic REWARD (SFX) ────────────────────────────────────────
 ['click','touchend'].forEach(evt=>{
   rewardBtn.addEventListener(evt,()=>{
-    if(rewardBtn.textContent==='REWARD'||
-       rewardBtn.textContent==='Déjà gratté aujourd’hui'){
+    if(rewardBtn.textContent==='REWARD'){
       playSfx('reward');
       ctx.globalCompositeOperation='destination-out';
       ctx.clearRect(0,0,canvas.width,canvas.height);
-      localStorage.setItem('lastScratchDate',todayISO);
+      localStorage.setItem('lastScratchDate', todayISO);
       const badgeId=cardToBadge[currentCard];
-      if(badgeId&&rewardBtn.textContent==='REWARD'){
-        const log=JSON.parse(localStorage.getItem('scratchLog')||'[]');
-        if(!log.includes(badgeId)){
-          log.push(badgeId);
-          localStorage.setItem('scratchLog',JSON.stringify(log));
-        }
+      const log=JSON.parse(localStorage.getItem('scratchLog')||'[]');
+      if(badgeId && !log.includes(badgeId)){
+        log.push(badgeId);
+        localStorage.setItem('scratchLog', JSON.stringify(log));
       }
       showTab('badges');
     }
   });
 });
 
-// ───14) Rendu badges ─────────────────────────────────────────────
+// ───14) Clic DONE (SFX tab-click) ────────────────────────────────
+doneBtn.addEventListener('click',()=>{
+  playSfx('tab');
+  ctx.globalCompositeOperation='destination-out';
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  localStorage.setItem('lastScratchDate', todayISO);
+  doneBtn.style.display        = 'none';
+  scratchStatus.textContent    = 'NEXT SCRATCH TOMORROW';
+  scratchStatus.style.display  = 'block';
+});
+
+// ───15) Rendu badges ─────────────────────────────────────────────
 function renderBadges(){
   const ul=document.getElementById('badges-list');
   ul.innerHTML='';
-  const SLOTS=30, won=JSON.parse(localStorage.getItem('scratchLog')||'[]');
+  const SLOTS = 30, won=JSON.parse(localStorage.getItem('scratchLog')||'[]');
   for(let i=0;i<SLOTS;i++){
     const li=document.createElement('li');
     li.classList.add('badge-slot');
@@ -281,10 +344,10 @@ function renderBadges(){
   }
 }
 
-// ───15) Service Worker ───────────────────────────────────────────
+// ───16) Service Worker ───────────────────────────────────────────
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(console.error);
 }
 
-// ───16) Démarrage onglet Profil ─────────────────────────────────
+// ───17) Démarrage onglet Profil ─────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>showTab('profile'));
