@@ -15,11 +15,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="style.css"/>
-
   <!-- Icône iOS -->
   <link rel="apple-touch-icon" sizes="180x180" href="images/icon-180.png">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
   <!-- conteneur d’intro Lottie -->
@@ -32,8 +32,9 @@
 
     <!-- PROFIL -->
     <div id="view-profile" class="view active">
-      <!-- header caché par défaut -->
-      <div id="profile-header" style="display: none;">
+
+      <!-- CE QUI SERA AFFICHÉ APRÈS VALIDATION DU PSEUDO -->
+      <div id="profile-header" style="display:none;">
         <p id="pseudo-display" class="profile-line"></p>
         <p id="level-display" class="profile-line">Level of love : 0</p>
         <div id="xp-container">
@@ -42,8 +43,8 @@
         <p id="xp-text">XP : 0/100</p>
       </div>
 
-      <!-- Formulaire de saisie du pseudo -->
-      <div id="profile-form">
+      <!-- Formulaire de saisie du pseudo (toujours visible tant que pas validé) -->
+      <div id="profile-form" class="center-form">
         <input id="pseudo-input" type="text" placeholder="Entrez votre pseudo" />
         <button id="pseudo-btn">Valider</button>
       </div>

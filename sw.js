@@ -1,7 +1,7 @@
 // sw.js
 
 // 1) Incrémentez cette version à chaque mise à jour
-const CACHE_NAME = 'scratch-cache-v4';
+const CACHE_NAME = 'scratch-cache-v5';
 
 const ASSETS = [
   '/', 
@@ -10,6 +10,7 @@ const ASSETS = [
   '/script.js',
   '/sw.js',
   '/manifest.json',
+  '/animations/intro.json',      // ajouté pour Lottie
   '/images/icon-180.png',
   '/images/card1.png',
   '/images/card2.png',
@@ -31,13 +32,15 @@ self.addEventListener('install', event => {
 // 3) Activation : on supprime les anciens caches + clients.claim pour contrôler immédiatement
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
+    caches.keys()
+      .then(keys =>
+        Promise.all(
+          keys
+            .filter(key => key !== CACHE_NAME)
+            .map(key => caches.delete(key))
+        )
       )
-    ).then(() => self.clients.claim())
+      .then(() => self.clients.claim())
   );
 });
 
@@ -61,6 +64,7 @@ self.addEventListener('fetch', event => {
     );
     return;
   }
+
   // pour tout le reste : cache-first
   event.respondWith(
     caches.match(event.request).then(cached => {
