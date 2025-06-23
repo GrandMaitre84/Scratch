@@ -11,8 +11,7 @@ html, body {
 .app {
   display: flex;
   flex-direction: column;
-  width: 100vw;
-  height: 100vh;
+  width: 100vw; height: 100vh;
   background-color: #FFD1DC;
 }
 
@@ -23,70 +22,67 @@ html, body {
   padding: 1rem;
   overflow-y: auto;
   background: transparent;
-  position: relative;
 }
 .view.active { display: block; }
 
-/* PROFIL header (caché par défaut) */
-#profile-header {
-  display: none; /* révélé via JS après validation du pseudo */
-  padding: 1rem;
-  flex-direction: column;
-  align-items: flex-start;
-  display: flex;
-}
-.profile-line { margin: .25rem 0; font-weight: bold; }
-
-/* barre XP */
-#xp-container {
-  width: 100%; max-width: 300px;
-  height: 12px; background: #EEE;
-  border-radius: 6px; overflow: hidden;
-  margin-top: .5rem;
-}
-#xp-bar { height: 100%; width: 0; background: #28A745; transition: width .3s ease; }
-#xp-text {
-  margin-top: .25rem; font-size: .9rem; color: #333;
-  width: 100%; max-width: 300px; text-align: center;
-}
-
-/* Formulaire pseudo centré */
-#profile-form {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+/* centered form */
+.center-form {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: .75rem;
-  width: 80%;
-  max-width: 300px;
+  margin-top: 2rem;
 }
+
+/* info-card style */
+.info-card {
+  display: flex;
+  align-items: center;
+  background: rgba(40,167,69,0.1); /* vert pastel */
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.card-icon {
+  font-size: 1.5rem;
+  margin-right: 0.75rem;
+}
+.card-label {
+  font-size: 0.9rem;
+  color: #555;
+}
+.card-value {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-top: 0.25rem;
+}
+
+/* Formulaire pseudo => bouton sous champ */
 #profile-form input {
   padding: .5rem;
   border: 1px solid #CCC;
   border-radius: 4px;
   font-size: 16px;
-  width: 100%;
+  width: 80%;
+  max-width: 300px;
 }
 #profile-form button {
+  margin-top: .75rem;
   padding: .5rem 1rem;
-  background: #007BFF;
-  color: #FFF;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  width: 50%;
+  background: #007BFF; color: #FFF;
+  border: none; border-radius: 4px;
+  cursor: pointer; font-size: 16px;
 }
 #profile-form button:hover { background: #0069D9; }
 
 /* Bouton reset */
 #reset-btn {
-  padding: .75rem 1.5rem; background: #DC3545; color: #FFF;
-  border: none; border-radius: 4px; cursor: pointer;
-  margin-bottom: 1rem; align-self: center; font-size: 16px;
+  padding: .75rem 1.5rem;
+  background: #DC3545; color: #FFF;
+  border: none; border-radius: 4px;
+  cursor: pointer; margin-top: 2rem;
+  width: 80%; max-width: 300px;
+  margin-left: auto; margin-right: auto;
 }
 #reset-btn:hover { background: #C82333; }
 
@@ -107,83 +103,70 @@ html, body {
   border: 1px solid #AAA; border-radius: 8px;
   overflow: hidden; background: #EEE;
 }
-#scratch-area img {
+#scratch-area img, #scratchCanvas {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; z-index: 1;
+  object-fit: cover;
 }
-#scratchCanvas {
-  position: absolute; inset: 0; cursor: crosshair;
-  touch-action: none; z-index: 2;
-}
+#scratchCanvas { cursor: crosshair; touch-action: none; }
 
-/* bouton REWARD */
-#reward-btn {
+/* bouton REWARD & DONE */
+#reward-btn, #done-btn {
   display: none; margin-top: 1rem;
   padding: .5rem 1rem; background: #28A745; color: #FFF;
-  border: none; border-radius: 4px; width: 80%; max-width: 300px;
+  border: none; border-radius: 4px;
+  width: 80%; max-width: 300px;
   cursor: pointer; font-size: 16px;
+  transition: background .2s ease;
 }
-#reward-btn:hover { background: #218838; }
+#reward-btn:hover, #done-btn:hover { background: #218838; }
+
+/* statut « NEXT SCRATCH TOMORROW » */
+#scratch-status {
+  display: none; margin-top: 1rem;
+  padding: .5rem 1rem;
+  background: #28A745; color: #FFF;
+  border-radius: 4px; width: 80%; max-width: 300px;
+  text-align: center; cursor: default;
+}
 
 /* onglets en bas – plein bord bas de l’écran */
 .tabs {
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
-  display: flex;
-  border-top: 1px solid #DDD;
-  background: #FFF;
-  z-index: 100;
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; border-top: 1px solid #DDD;
+  background: #FFF; z-index: 100;
 }
-
-/* hauteur fixe et texte aligné en haut */
 .tab {
-  flex: 1;
-  height: 64px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 8px;
-  background: #FFF;
-  color: #000;
-  border: none;
-  cursor: pointer;
-  text-align: center;
-  font-size: 18px;
+  flex: 1; height: 64px;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 8px; background: #FFF; color: #000;
+  border: none; cursor: pointer; font-size: 18px;
 }
 .tab.active {
-  background: #F0F0F0;
-  font-weight: bold;
+  background: #F0F0F0; font-weight: bold;
 }
-
 /* safe-area filler sous onglets */
 body::after {
-  content: "";
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
+  content: ""; position: fixed; left: 0; right: 0; bottom: 0;
   height: env(safe-area-inset-bottom);
-  background: #FFD1DC;
-  z-index: 50;
+  background: #FFD1DC; z-index: 50;
 }
 
-/* REWARDS en grille 2×n avec cases carrées */
-#view-badges h2 {
-  text-align: center; margin-bottom: 1rem;
-}
+/* REWARDS en grille 2×n */
+#view-badges h2 { text-align: center; margin-bottom: 1rem; }
 #badges-list {
-  display: grid; grid-template-columns: repeat(2, 1fr);
+  display: grid; grid-template-columns: repeat(2,1fr);
   gap: 12px; list-style: none; padding: 0; margin: 0;
   grid-auto-rows: auto;
 }
 #badges-list li.badge-slot {
-  position: relative;
-  display: flex; justify-content: center; align-items: center;
-  aspect-ratio: 1 / 1;
-  border: 1px dashed #AAA; border-radius: 4px;
-  background: rgba(255,255,255,0.2); overflow: hidden;
+  position: relative; display: flex;
+  justify-content: center; align-items: center;
+  aspect-ratio: 1/1; border: 1px dashed #AAA;
+  border-radius: 4px; background: rgba(255,255,255,0.2);
 }
 .badge-slot-number {
   position: absolute; top: 4px; left: 6px;
-  font-size: 0.75rem; color: #555; font-weight: bold;
+  font-size: .75rem; color: #555; font-weight: bold;
 }
 #badges-list li.badge-slot img {
   width: 100%; height: 100%; object-fit: contain;

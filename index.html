@@ -34,16 +34,48 @@
     <div id="view-profile" class="view active">
 
       <!-- CE QUI SERA AFFICHÉ APRÈS VALIDATION DU PSEUDO -->
-      <div id="profile-header" style="display:none;">
-        <p id="pseudo-display" class="profile-line"></p>
-        <p id="level-display" class="profile-line">Level of love : 0</p>
-        <div id="xp-container">
-          <div id="xp-bar"></div>
+      <div id="profile-header">
+        <div class="info-card">
+          <span class="card-icon">👤</span>
+          <div>
+            <p class="card-label">Pseudo</p>
+            <p class="card-value" id="pseudo-display"></p>
+          </div>
         </div>
-        <p id="xp-text">XP : 0/100</p>
+        <div class="info-card">
+          <span class="card-icon">🃏</span>
+          <div>
+            <p class="card-label">Cards scratched</p>
+            <p class="card-value" id="cards-scratched">0</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <span class="card-icon">🎖️</span>
+          <div>
+            <p class="card-label">Rewards</p>
+            <p class="card-value" id="rewards-count">0</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <span class="card-icon">❤️</span>
+          <div>
+            <p class="card-label">Level of love</p>
+            <p class="card-value" id="level-display">0</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <span class="card-icon">⭐</span>
+          <div>
+            <p class="card-label">XP</p>
+            <div id="xp-container">
+              <div id="xp-bar"></div>
+            </div>
+            <p class="card-value" id="xp-text">0/100</p>
+          </div>
+        </div>
       </div>
 
-      <!-- Formulaire de saisie du pseudo (toujours visible tant que pas validé) -->
+      <!-- Formulaire de saisie du pseudo (visible si pas validé) -->
       <div id="profile-form" class="center-form">
         <input id="pseudo-input" type="text" placeholder="Entrez votre pseudo" />
         <button id="pseudo-btn">Valider</button>
@@ -61,6 +93,8 @@
         <canvas id="scratchCanvas"></canvas>
       </div>
       <button id="reward-btn">REWARD</button>
+      <button id="done-btn">DONE</button>
+      <p id="scratch-status"></p>
     </div>
 
     <!-- REWARDS -->
