@@ -175,7 +175,6 @@ function updateXPDisplay(){
   const rem     = xpTotal % 100;
 
   // === CORRECTION ICI ===
-  // Ne plus réécrire le label, seulement la valeur numérique :
   levelDisplay.textContent = level;
 
   xpBar.style.width  = `${rem}%`;
@@ -336,14 +335,16 @@ function checkClear(){
 });
 
 // ───15) Clic DONE (SFX tab-click) ────────────────────────────────
-doneBtn.addEventListener('click', ()=>{
-  playSfx('tab');
-  ctx.globalCompositeOperation='destination-out';
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  localStorage.setItem('lastScratchDate', todayISO);
-  doneBtn.style.display       ='none';
-  scratchStatus.textContent   ='NEXT SCRATCH TOMORROW';
-  scratchStatus.style.display ='block';
+['click','touchend'].forEach(evt=>{
+  doneBtn.addEventListener(evt, ()=>{
+    playSfx('tab');
+    ctx.globalCompositeOperation='destination-out';
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    localStorage.setItem('lastScratchDate', todayISO);
+    doneBtn.style.display       ='none';
+    scratchStatus.textContent   ='NEXT SCRATCH TOMORROW';
+    scratchStatus.style.display ='block';
+  });
 });
 
 // ───16) Rendu badges ─────────────────────────────────────────────
