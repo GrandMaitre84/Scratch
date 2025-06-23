@@ -2,7 +2,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body {
   width: 100%; height: 100%;
-  background-color: #FFD1DC;  /* rose pastel global */
+  background-color: #FFD1DC;
   font-family: sans-serif;
 }
 
@@ -12,8 +12,7 @@ html, body {
   flex-direction: column;
   width: 100%; max-width: 375px; height: 100vh;
   margin: 0 auto;
-  background-color: #FFD1DC;  /* rose pastel au centre */
-  position: relative;
+  background-color: #FFD1DC;
 }
 
 /* vues */
@@ -22,7 +21,7 @@ html, body {
   display: none;
   padding: 1rem;
   overflow-y: auto;
-  background: transparent;    /* laisse voir le rose de .app */
+  background: transparent;
 }
 .view.active { display: block; }
 
@@ -31,9 +30,7 @@ html, body {
   padding: 1rem;
   display: flex; flex-direction: column; align-items: flex-start;
 }
-.profile-line {
-  margin: .25rem 0; font-weight: bold;
-}
+.profile-line { margin: .25rem 0; font-weight: bold; }
 
 /* barre XP */
 #xp-container {
@@ -42,10 +39,7 @@ html, body {
   border-radius: 6px; overflow: hidden;
   margin-top: .5rem;
 }
-#xp-bar {
-  height: 100%; width: 0%; background: #28A745;
-  transition: width .3s ease;
-}
+#xp-bar { height: 100%; width: 0; background: #28A745; transition: width .3s ease; }
 #xp-text {
   margin-top: .25rem;
   font-size: .9rem; color: #333;
@@ -58,12 +52,11 @@ html, body {
 }
 #profile-form input {
   flex: 1; padding: .5rem; border: 1px solid #CCC; border-radius: 4px;
-  font-size: 16px;              /* empêche iOS de zoomer */
+  font-size: 16px;
 }
 #profile-form button {
   padding: .5rem 1rem; background: #007BFF; color: #FFF;
-  border: none; border-radius: 4px; cursor: pointer;
-  font-size: 16px;
+  border: none; border-radius: 4px; cursor: pointer; font-size: 16px;
 }
 #profile-form button:hover { background: #0069D9; }
 
@@ -71,8 +64,7 @@ html, body {
 #reset-btn {
   padding: .75rem 1.5rem; background: #DC3545; color: #FFF;
   border: none; border-radius: 4px; cursor: pointer;
-  margin-bottom: 1rem; align-self: center;
-  font-size: 16px;
+  margin-bottom: 1rem; align-self: center; font-size: 16px;
 }
 #reset-btn:hover { background: #C82333; }
 
@@ -115,26 +107,22 @@ html, body {
 .tabs {
   display: flex;
   border-top: 1px solid #DDD;
-  background: transparent;
   position: sticky;
-  bottom: 0;
-  /* remonte la barre au-dessus de la home-indicator iOS */
-  padding-bottom: env(safe-area-inset-bottom);
+  bottom: calc(env(safe-area-inset-bottom) + 10px);
+  background: transparent;
 }
 .tab {
   flex: 1;
-  /* augmente la zone tactile pour le pouce */
-  padding: 1rem 0;
-  background: #FFF;         /* fond blanc pour les onglets */
-  color: #000;              /* texte noir */
+  padding: 1.2rem 0;            /* zone tactile plus grande */
+  background: #FFF;
+  color: #000;
   border: none;
   cursor: pointer;
   text-align: center;
-  user-select: none;
-  font-size: 18px;          /* texte un peu plus gros */
+  font-size: 18px;
 }
 .tab.active {
-  background: #F0F0F0;      /* léger gris pour l’actif */
+  background: #F0F0F0;
   font-weight: bold;
 }
 
@@ -148,14 +136,13 @@ html, body {
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   list-style: none;
-  padding: 0;
-  margin: 0;
+  padding: 0; margin: 0;
   grid-auto-rows: auto;
 }
 #badges-list li.badge-slot {
   position: relative;
   display: flex; justify-content: center; align-items: center;
-  aspect-ratio: 1 / 1;               /* cases carrées */
+  aspect-ratio: 1 / 1;
   border: 1px dashed #AAA;
   border-radius: 4px;
   background: rgba(255,255,255,0.2);
@@ -169,6 +156,5 @@ html, body {
   font-weight: bold;
 }
 #badges-list li.badge-slot img {
-  width: 100%; height: 100%;
-  object-fit: contain;
+  width: 100%; height: 100%; object-fit: contain;
 }
