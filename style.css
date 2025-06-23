@@ -108,7 +108,7 @@ html, body {
 /* onglets en bas - full width et fixed */
 .tabs {
   position: fixed;
-  left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom) + 10px);
+  left: 0; right: 0; bottom: 0;    /* collé au bord inférieur */
   display: flex;
   border-top: 1px solid #DDD;
   background: #FFF;
@@ -116,8 +116,8 @@ html, body {
 }
 .tab {
   flex: 1;
-  padding: 1.2rem 0;          /* zone tactile plus grande */
-  margin: 0;                  /* supprime tout margin */
+  padding: 1.2rem 0;               /* zone tactile généreuse */
+  margin: 0;                      /* supprime tout margin */
   background: #FFF;
   color: #000;
   border: none;
@@ -126,7 +126,7 @@ html, body {
   font-size: 18px;
 }
 .tab.active {
-  background: #F0F0F0;        /* léger gris pour l’actif */
+  background: #F0F0F0;            /* léger gris pour l’actif */
   font-weight: bold;
 }
 
