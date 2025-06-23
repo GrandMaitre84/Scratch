@@ -33,49 +33,43 @@
     <!-- PROFIL -->
     <div id="view-profile" class="view active">
 
-      <!-- CE QUI SERA AFFICHÉ APRÈS VALIDATION DU PSEUDO -->
-      <div id="profile-header">
-        <div class="info-card">
-          <span class="card-icon">👤</span>
-          <div>
-            <p class="card-label">Pseudo</p>
-            <p class="card-value" id="pseudo-display"></p>
-          </div>
+      <!-- STATUTS en Cartes -->
+      <div class="profile-stats">
+
+        <!-- Carte Pseudo (full width) -->
+        <div class="stat-card full-width" id="card-pseudo">
+          <strong>Pseudo</strong>
+          <p id="pseudo-display"></p>
         </div>
-        <div class="info-card">
-          <span class="card-icon">🃏</span>
-          <div>
-            <p class="card-label">Cards scratched</p>
-            <p class="card-value" id="cards-scratched">0</p>
-          </div>
+
+        <!-- Carte Cartes Grattées -->
+        <div class="stat-card" id="cards-scratched-card">
+          <strong>Cards scratched</strong>
+          <p id="cards-scratched">0</p>
         </div>
-        <div class="info-card">
-          <span class="card-icon">🎖️</span>
-          <div>
-            <p class="card-label">Rewards</p>
-            <p class="card-value" id="rewards-count">0</p>
-          </div>
+
+        <!-- Carte Rewards -->
+        <div class="stat-card" id="rewards-count-card">
+          <strong>Rewards</strong>
+          <p id="rewards-count">0</p>
         </div>
-        <div class="info-card">
-          <span class="card-icon">❤️</span>
-          <div>
-            <p class="card-label">Level of love</p>
-            <p class="card-value" id="level-display">0</p>
-          </div>
+
+        <!-- Carte Level -->
+        <div class="stat-card" id="level-card">
+          <strong>Level of love</strong>
+          <p id="level-display">0</p>
         </div>
-        <div class="info-card">
-          <span class="card-icon">⭐</span>
-          <div>
-            <p class="card-label">XP</p>
-            <div id="xp-container">
-              <div id="xp-bar"></div>
-            </div>
-            <p class="card-value" id="xp-text">0/100</p>
-          </div>
+
+        <!-- Carte XP (full width) -->
+        <div class="stat-card full-width" id="xp-card">
+          <strong>XP Progress</strong>
+          <div id="xp-container"><div id="xp-bar"></div></div>
+          <p id="xp-text">0/100</p>
         </div>
+
       </div>
 
-      <!-- Formulaire de saisie du pseudo (visible si pas validé) -->
+      <!-- Formulaire de saisie du pseudo (centré verticalement) -->
       <div id="profile-form" class="center-form">
         <input id="pseudo-input" type="text" placeholder="Entrez votre pseudo" />
         <button id="pseudo-btn">Valider</button>
@@ -93,8 +87,6 @@
         <canvas id="scratchCanvas"></canvas>
       </div>
       <button id="reward-btn">REWARD</button>
-      <button id="done-btn">DONE</button>
-      <p id="scratch-status"></p>
     </div>
 
     <!-- REWARDS -->

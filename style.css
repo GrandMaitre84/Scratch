@@ -11,7 +11,8 @@ html, body {
 .app {
   display: flex;
   flex-direction: column;
-  width: 100vw; height: 100vh;
+  width: 100vw;
+  height: 100vh;
   background-color: #FFD1DC;
 }
 
@@ -25,64 +26,71 @@ html, body {
 }
 .view.active { display: block; }
 
-/* centered form */
-.center-form {
+/* Profil — disposition “cartes” */
+.profile-stats {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 2rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem;
 }
-
-/* info-card style */
-.info-card {
-  display: flex;
-  align-items: center;
-  background: rgba(40,167,69,0.1); /* vert pastel */
+.stat-card {
+  flex: 1 1 calc(50% - 0.5rem);
+  background: rgba(40,167,69,0.1);
   border-radius: 8px;
   padding: 1rem;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-align: center;
 }
-.card-icon {
-  font-size: 1.5rem;
-  margin-right: 0.75rem;
+.stat-card.full-width {
+  flex: 1 1 100%;
 }
-.card-label {
+.stat-card strong {
+  display: block;
+  margin-bottom: 0.5rem;
   font-size: 0.9rem;
-  color: #555;
+  color: #28A745;
 }
-.card-value {
-  font-size: 1.1rem;
+.stat-card p {
+  font-size: 1.2rem;
   font-weight: bold;
-  margin-top: 0.25rem;
+  margin: 0;
 }
 
-/* Formulaire pseudo => bouton sous champ */
+/* Centre vertical pour le formulaire tant que pas de pseudo */
+.center-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem;
+}
 #profile-form input {
   padding: .5rem;
   border: 1px solid #CCC;
   border-radius: 4px;
   font-size: 16px;
-  width: 80%;
-  max-width: 300px;
 }
 #profile-form button {
-  margin-top: .75rem;
   padding: .5rem 1rem;
-  background: #007BFF; color: #FFF;
-  border: none; border-radius: 4px;
-  cursor: pointer; font-size: 16px;
+  background: #007BFF;
+  color: #FFF;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
 }
 #profile-form button:hover { background: #0069D9; }
 
 /* Bouton reset */
 #reset-btn {
   padding: .75rem 1.5rem;
-  background: #DC3545; color: #FFF;
-  border: none; border-radius: 4px;
-  cursor: pointer; margin-top: 2rem;
-  width: 80%; max-width: 300px;
-  margin-left: auto; margin-right: auto;
+  background: #DC3545;
+  color: #FFF;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 1rem auto;
+  font-size: 16px;
 }
 #reset-btn:hover { background: #C82333; }
 
@@ -105,69 +113,71 @@ html, body {
 }
 #scratch-area img, #scratchCanvas {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover;
 }
 #scratchCanvas { cursor: crosshair; touch-action: none; }
 
-/* bouton REWARD & DONE */
-#reward-btn, #done-btn {
+/* bouton REWARD */
+#reward-btn {
   display: none; margin-top: 1rem;
   padding: .5rem 1rem; background: #28A745; color: #FFF;
-  border: none; border-radius: 4px;
-  width: 80%; max-width: 300px;
+  border: none; border-radius: 4px; width: 80%; max-width: 300px;
   cursor: pointer; font-size: 16px;
-  transition: background .2s ease;
 }
-#reward-btn:hover, #done-btn:hover { background: #218838; }
-
-/* statut « NEXT SCRATCH TOMORROW » */
-#scratch-status {
-  display: none; margin-top: 1rem;
-  padding: .5rem 1rem;
-  background: #28A745; color: #FFF;
-  border-radius: 4px; width: 80%; max-width: 300px;
-  text-align: center; cursor: default;
-}
+#reward-btn:hover { background: #218838; }
 
 /* onglets en bas – plein bord bas de l’écran */
 .tabs {
-  position: fixed; left: 0; right: 0; bottom: 0;
-  display: flex; border-top: 1px solid #DDD;
-  background: #FFF; z-index: 100;
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  border-top: 1px solid #DDD;
+  background: #FFF;
+  z-index: 100;
 }
 .tab {
-  flex: 1; height: 64px;
-  display: flex; align-items: flex-start; justify-content: center;
-  padding-top: 8px; background: #FFF; color: #000;
-  border: none; cursor: pointer; font-size: 18px;
+  flex: 1;
+  height: 64px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8px;
+  background: #FFF;
+  color: #000;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  font-size: 18px;
 }
 .tab.active {
-  background: #F0F0F0; font-weight: bold;
+  background: #F0F0F0;
+  font-weight: bold;
 }
-/* safe-area filler sous onglets */
 body::after {
-  content: ""; position: fixed; left: 0; right: 0; bottom: 0;
+  content: "";
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
   height: env(safe-area-inset-bottom);
-  background: #FFD1DC; z-index: 50;
+  background: #FFD1DC;
+  z-index: 50;
 }
 
-/* REWARDS en grille 2×n */
+/* REWARDS */
 #view-badges h2 { text-align: center; margin-bottom: 1rem; }
 #badges-list {
-  display: grid; grid-template-columns: repeat(2,1fr);
+  display: grid; grid-template-columns: repeat(2, 1fr);
   gap: 12px; list-style: none; padding: 0; margin: 0;
   grid-auto-rows: auto;
 }
-#badges-list li.badge-slot {
-  position: relative; display: flex;
-  justify-content: center; align-items: center;
-  aspect-ratio: 1/1; border: 1px dashed #AAA;
-  border-radius: 4px; background: rgba(255,255,255,0.2);
+#badges-list li {
+  position: relative;
+  display: flex; justify-content: center; align-items: center;
+  aspect-ratio: 1/1; border: 1px dashed #AAA; border-radius: 4px;
+  background: rgba(255,255,255,0.2); overflow: hidden;
 }
 .badge-slot-number {
   position: absolute; top: 4px; left: 6px;
-  font-size: .75rem; color: #555; font-weight: bold;
+  font-size: 0.75rem; color: #555; font-weight: bold;
 }
-#badges-list li.badge-slot img {
+#badges-list li img {
   width: 100%; height: 100%; object-fit: contain;
 }
