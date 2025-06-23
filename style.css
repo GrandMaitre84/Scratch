@@ -2,7 +2,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body {
   width: 100%; height: 100%;
-  background-color: #FFD1DC;  /* rose pastel global */
+  background-color: #FFD1DC;
   font-family: sans-serif;
   overflow-x: hidden;
 }
@@ -11,7 +11,7 @@ html, body {
 .app {
   display: flex;
   flex-direction: column;
-  width: 100vw;          /* plein écran */
+  width: 100vw;
   height: 100vh;
   background-color: #FFD1DC;
 }
@@ -105,22 +105,24 @@ html, body {
 }
 #reward-btn:hover { background: #218838; }
 
-/* onglets en bas - full width et fixed */
+/* onglets en bas – plein bord bas de l’écran */
 .tabs {
   position: fixed;
-  left: 0; right: 0; bottom: 0;    /* collé au bord inférieur */
+  left: 0; right: 0; bottom: 0;
   display: flex;
   border-top: 1px solid #DDD;
   background: #FFF;
   z-index: 100;
 }
+
+/* hauteur fixe et texte aligné en haut */
 .tab {
   flex: 1;
-  display: flex;                  /* pour aligner le texte */
-  align-items: flex-start;        /* remonte le texte */
+  height: 64px;               /* hauteur fixe */
+  display: flex;
+  align-items: flex-start;    /* texte en haut */
   justify-content: center;
-  padding: 1rem 0 1.4rem;         /* top 1rem, bottom 1.4rem = hauteur constante */
-  margin: 0;
+  padding-top: 8px;           /* un peu d’espace au-dessus du texte */
   background: #FFF;
   color: #000;
   border: none;
@@ -128,12 +130,13 @@ html, body {
   text-align: center;
   font-size: 18px;
 }
+
 .tab.active {
-  background: #F0F0F0;            /* léger gris pour l’actif */
+  background: #F0F0F0;
   font-weight: bold;
 }
 
-/* safe-area filler pour arrière-plan rose sous onglets */
+/* safe-area filler sous onglets */
 body::after {
   content: "";
   position: fixed;
