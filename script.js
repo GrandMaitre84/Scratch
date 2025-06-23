@@ -34,37 +34,40 @@ const daysElapsed = Math.floor((todayDate - startDate) / msPerDay);
 const currentCard = cards[ daysElapsed % cards.length ];
 
 // ─── 3) Récupération du DOM ───────────────────────────────────────
-const tabProfile   = document.getElementById('tab-profile');
-const tabPlay      = document.getElementById('tab-play');
-const tabBadges    = document.getElementById('tab-badges');
-const viewProfile  = document.getElementById('view-profile');
-const viewPlay     = document.getElementById('view-play');
-const viewBadges   = document.getElementById('view-badges');
-const resetBtn     = document.getElementById('reset-btn');
-const area         = document.getElementById('scratch-area');
-const canvas       = document.getElementById('scratchCanvas');
-const ctx          = canvas.getContext('2d');
-const rewardBtn    = document.getElementById('reward-btn');
-const pseudoInput  = document.getElementById('pseudo-input');
-const pseudoBtn    = document.getElementById('pseudo-btn');
-const pseudoSpan   = document.getElementById('pseudo-display');
-const levelDisplay = document.getElementById('level-display');
-const xpBar        = document.getElementById('xp-bar');
-const xpText       = document.getElementById('xp-text');
-const scratchImage = document.getElementById('scratch-image');
+const tabProfile    = document.getElementById('tab-profile');
+const tabPlay       = document.getElementById('tab-play');
+const tabBadges     = document.getElementById('tab-badges');
+const viewProfile   = document.getElementById('view-profile');
+const viewPlay      = document.getElementById('view-play');
+const viewBadges    = document.getElementById('view-badges');
+const resetBtn      = document.getElementById('reset-btn');
+const area          = document.getElementById('scratch-area');
+const canvas        = document.getElementById('scratchCanvas');
+const ctx           = canvas.getContext('2d');
+const rewardBtn     = document.getElementById('reward-btn');
+const pseudoInput   = document.getElementById('pseudo-input');
+const pseudoBtn     = document.getElementById('pseudo-btn');
+const pseudoSpan    = document.getElementById('pseudo-display');
+const levelDisplay  = document.getElementById('level-display');
+const xpBar         = document.getElementById('xp-bar');
+const xpText        = document.getElementById('xp-text');
+const scratchImage  = document.getElementById('scratch-image');
+const profileForm   = document.getElementById('profile-form');
+const profileHeader = document.getElementById('profile-header');
 
 let drawing = false;
 
 // ─── 4) Gestion du pseudo ─────────────────────────────────────────
 function checkPseudo() {
-  const form = document.getElementById('profile-form');
   const stored = localStorage.getItem('pseudo');
   if (stored) {
-    form.style.display = 'none';
-    pseudoSpan.textContent = stored;
+    profileForm.style.display    = 'none';
+    profileHeader.style.display  = 'flex';
+    pseudoSpan.textContent       = stored;
   } else {
-    form.style.display = 'flex';
-    pseudoSpan.textContent = '';
+    profileForm.style.display    = 'flex';
+    profileHeader.style.display  = 'none';
+    pseudoSpan.textContent       = '';
   }
 }
 pseudoBtn.addEventListener('click', () => {
@@ -77,8 +80,8 @@ pseudoBtn.addEventListener('click', () => {
 // ─── 5) Mise à jour XP & “Level of love” ─────────────────────────
 function updateXPDisplay() {
   const xpTotal = parseInt(localStorage.getItem('xpTotal') || '0', 10);
-  const level = Math.floor(xpTotal / 100);
-  const rem   = xpTotal % 100;
+  const level   = Math.floor(xpTotal / 100);
+  const rem     = xpTotal % 100;
   levelDisplay.textContent = `Level of love : ${level}`;
   xpBar.style.width        = `${rem}%`;
   xpText.textContent       = `XP : ${rem}/100`;
@@ -108,8 +111,8 @@ function showTab(tab) {
   }
 }
 tabProfile.addEventListener('click', () => showTab('profile'));
-tabPlay.addEventListener('click',   () => showTab('play'));
-tabBadges.addEventListener('click', () => showTab('badges'));
+tabPlay.addEventListener('click',    () => showTab('play'));
+tabBadges.addEventListener('click',  () => showTab('badges'));
 
 // ─── Reset pour tests ─────────────────────────────────────────────
 resetBtn.addEventListener('click', () => {
@@ -123,11 +126,14 @@ resetBtn.addEventListener('click', () => {
 // ─── 7) Initialisation du canvas ───────────────────────────────────
 function initScratch() {
   const w = area.clientWidth, h = area.clientHeight;
-  canvas.width = w; canvas.height = h;
+  canvas.width  = w;
+  canvas.height = h;
   ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = '#999'; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle = '#999';
+  ctx.fillRect(0, 0, w, h);
   ctx.globalCompositeOperation = 'destination-out';
-  ctx.lineWidth = 30; ctx.lineCap = 'round';
+  ctx.lineWidth = 30;
+  ctx.lineCap   = 'round';
 }
 window.addEventListener('resize', initScratch);
 
@@ -158,7 +164,7 @@ function checkDailyScratch() {
 
 // ─── 10) Vérification du grattage à 60% ────────────────────────────
 function checkClear() {
-  const data = ctx.getImageData(0,0,canvas.width,canvas. height).data;
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
   let cleared = 0;
   for (let i = 3; i < data.length; i += 4) {
     if (data[i] === 0) cleared++;
@@ -179,21 +185,23 @@ function checkClear() {
 }
 
 // ─── 11) Événements de grattage ──────────────────────────────────
-['mousedown','touchstart'].forEach(evt => {
+['mousedown', 'touchstart'].forEach(evt => {
   canvas.addEventListener(evt, e => {
     drawing = true;
     const p = getPos(e);
-    ctx.beginPath(); ctx.moveTo(p.x,p.y);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
   });
 });
-['mousemove','touchmove'].forEach(evt => {
+['mousemove', 'touchmove'].forEach(evt => {
   canvas.addEventListener(evt, e => {
     if (!drawing) return;
     const p = getPos(e);
-    ctx.lineTo(p.x,p.y); ctx.stroke();
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
   });
 });
-['mouseup','mouseleave','touchend'].forEach(evt => {
+['mouseup', 'mouseleave', 'touchend'].forEach(evt => {
   canvas.addEventListener(evt, () => {
     if (drawing) checkClear();
     drawing = false;
@@ -201,12 +209,12 @@ function checkClear() {
 });
 
 // ─── 12) Clic REWARD ──────────────────────────────────────────────
-['click','touchend'].forEach(evt => {
+['click', 'touchend'].forEach(evt => {
   rewardBtn.addEventListener(evt, () => {
     if (rewardBtn.textContent === 'REWARD' ||
         rewardBtn.textContent === 'Déjà gratté aujourd’hui') {
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       localStorage.setItem('lastScratchDate', todayISO);
 
       const badgeId = cardToBadge[currentCard];

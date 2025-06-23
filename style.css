@@ -26,12 +26,13 @@ html, body {
 }
 .view.active { display: block; }
 
-/* PROFIL header */
+/* PROFIL header (caché par défaut) */
 #profile-header {
+  display: none; /* révélé via JS après validation du pseudo */
   padding: 1rem;
-  display: flex;
   flex-direction: column;
   align-items: flex-start;
+  display: flex;
 }
 .profile-line { margin: .25rem 0; font-weight: bold; }
 
@@ -48,17 +49,28 @@ html, body {
   width: 100%; max-width: 300px; text-align: center;
 }
 
-/* Formulaire pseudo */
+/* Formulaire pseudo => bouton sous champ */
 #profile-form {
-  display: flex; gap: .5rem; margin: 1rem 0; justify-content: center;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  margin: 1rem 0;
+  justify-content: center;
 }
 #profile-form input {
-  flex: 1; padding: .5rem; border: 1px solid #CCC; border-radius: 4px;
+  padding: .5rem;
+  border: 1px solid #CCC;
+  border-radius: 4px;
   font-size: 16px;
 }
 #profile-form button {
-  padding: .5rem 1rem; background: #007BFF; color: #FFF;
-  border: none; border-radius: 4px; cursor: pointer; font-size: 16px;
+  padding: .5rem 1rem;
+  background: #007BFF;
+  color: #FFF;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
 }
 #profile-form button:hover { background: #0069D9; }
 
@@ -118,11 +130,11 @@ html, body {
 /* hauteur fixe et texte aligné en haut */
 .tab {
   flex: 1;
-  height: 64px;               /* hauteur fixe */
+  height: 64px;
   display: flex;
-  align-items: flex-start;    /* texte en haut */
+  align-items: flex-start;
   justify-content: center;
-  padding-top: 8px;           /* un peu d’espace au-dessus du texte */
+  padding-top: 8px;
   background: #FFF;
   color: #000;
   border: none;
@@ -130,7 +142,6 @@ html, body {
   text-align: center;
   font-size: 18px;
 }
-
 .tab.active {
   background: #F0F0F0;
   font-weight: bold;
