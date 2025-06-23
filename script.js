@@ -30,7 +30,7 @@ function playSfx(name) {
 // scratch loop
 let scratchSource = null;
 function startScratchSfx(){
-  if(scratchSource||!sfxBuffers['scratch'])return;
+  if(scratchSource||!sfxBuffers['scratch']) return;
   scratchSource = audioCtx.createBufferSource();
   scratchSource.buffer = sfxBuffers['scratch'];
   scratchSource.loop = true;
@@ -38,7 +38,7 @@ function startScratchSfx(){
   scratchSource.start(0);
 }
 function stopScratchSfx(){
-  if(!scratchSource)return;
+  if(!scratchSource) return;
   scratchSource.stop();
   scratchSource = null;
 }
@@ -74,28 +74,28 @@ const daysElapsed = Math.floor((new Date(todayISO) - new Date(start)) / 86400000
 const currentCard = cards[daysElapsed % cards.length];
 
 // ─── 3) DOM ───────────────────────────────────────────────────────
-const tabProfile    = document.getElementById('tab-profile');
-const tabPlay       = document.getElementById('tab-play');
-const tabBadges     = document.getElementById('tab-badges');
-const viewProfile   = document.getElementById('view-profile');
-const viewPlay      = document.getElementById('view-play');
-const viewBadges    = document.getElementById('view-badges');
-const resetBtn      = document.getElementById('reset-btn');
-const area          = document.getElementById('scratch-area');
-const canvas        = document.getElementById('scratchCanvas');
-const ctx           = canvas.getContext('2d');
-const rewardBtn     = document.getElementById('reward-btn');
-const pseudoInput   = document.getElementById('pseudo-input');
-const pseudoBtn     = document.getElementById('pseudo-btn');
-const pseudoSpan    = document.getElementById('pseudo-display');
-const levelDisplay  = document.getElementById('level-display');
-const xpBar         = document.getElementById('xp-bar');
-const xpText        = document.getElementById('xp-text');
-const scratchImage  = document.getElementById('scratch-image');
-const profileForm   = document.getElementById('profile-form');
-const profileStats  = document.querySelector('.profile-stats');
-const cardsDisplay  = document.getElementById('cards-scratched');
-const rewardsDisplay= document.getElementById('rewards-count');
+const tabProfile     = document.getElementById('tab-profile');
+const tabPlay        = document.getElementById('tab-play');
+const tabBadges      = document.getElementById('tab-badges');
+const viewProfile    = document.getElementById('view-profile');
+const viewPlay       = document.getElementById('view-play');
+const viewBadges     = document.getElementById('view-badges');
+const resetBtn       = document.getElementById('reset-btn');
+const area           = document.getElementById('scratch-area');
+const canvas         = document.getElementById('scratchCanvas');
+const ctx            = canvas.getContext('2d');
+const rewardBtn      = document.getElementById('reward-btn');
+const pseudoInput    = document.getElementById('pseudo-input');
+const pseudoBtn      = document.getElementById('pseudo-btn');
+const pseudoSpan     = document.getElementById('pseudo-display');
+const levelDisplay   = document.getElementById('level-display');
+const xpBar          = document.getElementById('xp-bar');
+const xpText         = document.getElementById('xp-text');
+const scratchImage   = document.getElementById('scratch-image');
+const profileForm    = document.getElementById('profile-form');
+const profileStats   = document.querySelector('.profile-stats');
+const cardsDisplay   = document.getElementById('cards-scratched');
+const rewardsDisplay = document.getElementById('rewards-count');
 
 // statut / NEXT SCRATCH TOMORROW
 const scratchStatus = document.createElement('p');
@@ -162,20 +162,24 @@ pseudoBtn.addEventListener('click', ()=>{
 // ─── 5) Actualise les compteurs de l’onglet Profil ────────────────
 function updateProfileStats() {
   const xpTotal      = parseInt(localStorage.getItem('xpTotal')||'0',10);
-  const scratched    = Math.floor(xpTotal/20);
+  const scratched    = Math.floor(xpTotal / 20);
   const rewardsCount = JSON.parse(localStorage.getItem('scratchLog')||'[]').length;
-  cardsDisplay.textContent     = scratched;
-  rewardsDisplay.textContent   = rewardsCount;
+  cardsDisplay.textContent   = scratched;
+  rewardsDisplay.textContent = rewardsCount;
 }
 
 // ─── 6) Affichage XP & Level ──────────────────────────────────────
 function updateXPDisplay(){
   const xpTotal = parseInt(localStorage.getItem('xpTotal')||'0',10);
-  const level   = Math.floor(xpTotal/100);
-  const rem     = xpTotal%100;
-  levelDisplay.textContent = `Level of love : ${level}`;
-  xpBar.style.width        = `${rem}%`;
-  xpText.textContent       = `XP : ${rem}/100`;
+  const level   = Math.floor(xpTotal / 100);
+  const rem     = xpTotal % 100;
+
+  // === CORRECTION ICI ===
+  // Ne plus réécrire le label, seulement la valeur numérique :
+  levelDisplay.textContent = level;
+
+  xpBar.style.width  = `${rem}%`;
+  xpText.textContent = `${rem}/100`;
 }
 
 // ─── 7) Onglets (SFX) ─────────────────────────────────────────────
@@ -202,12 +206,12 @@ function showTab(tab){
     renderBadges();
   }
 }
-tabProfile.addEventListener('click',()=>showTab('profile'));
-tabPlay.addEventListener   ('click',()=>showTab('play'));
-tabBadges.addEventListener ('click',()=>showTab('badges'));
+tabProfile.addEventListener('click', ()=>showTab('profile'));
+tabPlay.addEventListener   ('click', ()=>showTab('play'));
+tabBadges.addEventListener ('click', ()=>showTab('badges'));
 
 // ─── 8) Reset tests ──────────────────────────────────────────────
-resetBtn.addEventListener('click',()=>{
+resetBtn.addEventListener('click', ()=>{
   localStorage.removeItem('scratchLog');
   localStorage.removeItem('lastScratchDate');
   localStorage.removeItem('xpTotal');
@@ -219,21 +223,24 @@ resetBtn.addEventListener('click',()=>{
 
 // ─── 9) Canvas init ──────────────────────────────────────────────
 function initScratch(){
-  const w=area.clientWidth, h=area.clientHeight;
-  canvas.width=w; canvas.height=h;
-  ctx.globalCompositeOperation='source-over';
-  ctx.fillStyle='#999'; ctx.fillRect(0,0,w,h);
-  ctx.globalCompositeOperation='destination-out';
-  ctx.lineWidth=30; ctx.lineCap='round';
+  const w = area.clientWidth, h = area.clientHeight;
+  canvas.width  = w;
+  canvas.height = h;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#999';
+  ctx.fillRect(0,0,w,h);
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.lineWidth = 30;
+  ctx.lineCap   = 'round';
 }
 window.addEventListener('resize', initScratch);
 
 // ───10) Position curseur ─────────────────────────────────────────
 function getPos(e){
-  const r=canvas.getBoundingClientRect();
+  const r = canvas.getBoundingClientRect();
   return {
-    x:(e.touches?e.touches[0].clientX:e.clientX)-r.left,
-    y:(e.touches?e.touches[0].clientY:e.clientY)-r.top
+    x: (e.touches?e.touches[0].clientX:e.clientX) - r.left,
+    y: (e.touches?e.touches[0].clientY:e.clientY) - r.top
   };
 }
 
@@ -259,16 +266,16 @@ function checkDailyScratch(){
 
 // ───12) Vérif 60% ────────────────────────────────────────────────
 function checkClear(){
-  const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
   let cleared=0;
-  for(let i=3;i<data.length;i+=4) if(data[i]===0) cleared++;
-  if(cleared/(canvas.width*canvas.height)*100>=60){
+  for(let i=3; i<data.length; i+=4) if(data[i]===0) cleared++;
+  if(cleared/(canvas.width*canvas.height)*100 >= 60){
     // incrémente scratchCount
     const cnt = parseInt(localStorage.getItem('scratchCount')||'0',10) + 1;
     localStorage.setItem('scratchCount', cnt);
     updateProfileStats();
     // ajoute XP
-    const xpTotal=parseInt(localStorage.getItem('xpTotal')||'0',10)+20;
+    const xpTotal = parseInt(localStorage.getItem('xpTotal')||'0',10) + 20;
     localStorage.setItem('xpTotal', xpTotal);
     updateXPDisplay();
     if(cardToBadge[currentCard]){
@@ -289,15 +296,15 @@ function checkClear(){
 ['mousedown','touchstart'].forEach(evt=>{
   canvas.addEventListener(evt,e=>{
     startScratchSfx();
-    drawing=true;
-    const p=getPos(e);
+    drawing = true;
+    const p = getPos(e);
     ctx.beginPath(); ctx.moveTo(p.x,p.y);
   });
 });
 ['mousemove','touchmove'].forEach(evt=>{
   canvas.addEventListener(evt,e=>{
     if(!drawing) return;
-    const p=getPos(e);
+    const p = getPos(e);
     ctx.lineTo(p.x,p.y); ctx.stroke();
   });
 });
@@ -317,9 +324,9 @@ function checkClear(){
       ctx.globalCompositeOperation='destination-out';
       ctx.clearRect(0,0,canvas.width,canvas.height);
       localStorage.setItem('lastScratchDate', todayISO);
-      const badgeId=cardToBadge[currentCard];
-      const log=JSON.parse(localStorage.getItem('scratchLog')||'[]');
-      if(badgeId&&!log.includes(badgeId)){
+      const badgeId = cardToBadge[currentCard];
+      const log     = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+      if(badgeId && !log.includes(badgeId)){
         log.push(badgeId);
         localStorage.setItem('scratchLog', JSON.stringify(log));
       }
@@ -334,27 +341,27 @@ doneBtn.addEventListener('click', ()=>{
   ctx.globalCompositeOperation='destination-out';
   ctx.clearRect(0,0,canvas.width,canvas.height);
   localStorage.setItem('lastScratchDate', todayISO);
-  doneBtn.style.display        ='none';
-  scratchStatus.textContent    ='NEXT SCRATCH TOMORROW';
-  scratchStatus.style.display  ='block';
+  doneBtn.style.display       ='none';
+  scratchStatus.textContent   ='NEXT SCRATCH TOMORROW';
+  scratchStatus.style.display ='block';
 });
 
 // ───16) Rendu badges ─────────────────────────────────────────────
 function renderBadges(){
-  const ul=document.getElementById('badges-list');
-  ul.innerHTML='';
-  const SLOTS=30, won=JSON.parse(localStorage.getItem('scratchLog')||'[]');
-  for(let i=0;i<SLOTS;i++){
-    const li=document.createElement('li');
+  const ul = document.getElementById('badges-list');
+  ul.innerHTML = '';
+  const SLOTS = 30, won = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+  for(let i=0; i<SLOTS; i++){
+    const li = document.createElement('li');
     li.classList.add('badge-slot');
-    const num=document.createElement('span');
+    const num = document.createElement('span');
     num.classList.add('badge-slot-number');
-    num.textContent=i+1;
+    num.textContent = i+1;
     li.appendChild(num);
     if(won[i]){
-      const img=document.createElement('img');
-      img.src=`images/${won[i]}.png`;
-      img.alt=`Badge ${won[i]}`;
+      const img = document.createElement('img');
+      img.src = `images/${won[i]}.png`;
+      img.alt = `Badge ${won[i]}`;
       li.appendChild(img);
     }
     ul.appendChild(li);

@@ -58,12 +58,14 @@
         <!-- Carte XP (full width) -->
         <div class="stat-card full-width" id="xp-card">
           <strong>XP Progress</strong>
-          <div id="xp-container"><div id="xp-bar"></div></div>
+          <div class="progress-bar">
+            <div class="progress-bar__fill" id="xp-bar"></div>
+          </div>
           <p id="xp-text">0/100</p>
         </div>
       </div>
 
-      <!-- Formulaire de saisie du pseudo (centré verticalement) -->
+      <!-- Formulaire de saisie du pseudo (toujours visible tant que pas validé) -->
       <div id="profile-form" class="center-form">
         <input id="pseudo-input" type="text" placeholder="Entrez votre pseudo" />
         <button id="pseudo-btn">Valider</button>
