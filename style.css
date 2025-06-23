@@ -4,18 +4,16 @@ html, body {
   width: 100%; height: 100%;
   background-color: #FFD1DC;  /* rose pastel global */
   font-family: sans-serif;
+  overflow-x: hidden;
 }
 
 /* container */
 .app {
   display: flex;
   flex-direction: column;
-  width: 100%;           /* plein écran */
-  max-width: none;       /* plus de limite à 375px */
+  width: 100vw;          /* plein écran */
   height: 100vh;
-  margin: 0 auto;
   background-color: #FFD1DC;
-  position: relative;
 }
 
 /* vues */
@@ -31,7 +29,9 @@ html, body {
 /* PROFIL header */
 #profile-header {
   padding: 1rem;
-  display: flex; flex-direction: column; align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 .profile-line { margin: .25rem 0; font-weight: bold; }
 
@@ -44,8 +44,7 @@ html, body {
 }
 #xp-bar { height: 100%; width: 0; background: #28A745; transition: width .3s ease; }
 #xp-text {
-  margin-top: .25rem;
-  font-size: .9rem; color: #333;
+  margin-top: .25rem; font-size: .9rem; color: #333;
   width: 100%; max-width: 300px; text-align: center;
 }
 
@@ -106,18 +105,19 @@ html, body {
 }
 #reward-btn:hover { background: #218838; }
 
-/* onglets en bas */
+/* onglets en bas - full width et fixed */
 .tabs {
+  position: fixed;
+  left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom) + 10px);
   display: flex;
   border-top: 1px solid #DDD;
-  position: sticky;
-  bottom: calc(env(safe-area-inset-bottom) + 10px);
-  background: transparent;
-  width: 100%;   /* pour remplir toute la largeur */
+  background: #FFF;
+  z-index: 100;
 }
 .tab {
   flex: 1;
-  padding: 1.2rem 0;
+  padding: 1.2rem 0;          /* zone tactile plus grande */
+  margin: 0;                  /* supprime tout margin */
   background: #FFF;
   color: #000;
   border: none;
@@ -126,38 +126,39 @@ html, body {
   font-size: 18px;
 }
 .tab.active {
-  background: #F0F0F0;
+  background: #F0F0F0;        /* léger gris pour l’actif */
   font-weight: bold;
+}
+
+/* safe-area filler pour arrière-plan rose sous onglets */
+body::after {
+  content: "";
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: env(safe-area-inset-bottom);
+  background: #FFD1DC;
+  z-index: 50;
 }
 
 /* REWARDS en grille 2×n avec cases carrées */
 #view-badges h2 {
-  text-align: center;
-  margin-bottom: 1rem;
+  text-align: center; margin-bottom: 1rem;
 }
 #badges-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  list-style: none;
-  padding: 0; margin: 0;
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 12px; list-style: none; padding: 0; margin: 0;
   grid-auto-rows: auto;
 }
 #badges-list li.badge-slot {
   position: relative;
   display: flex; justify-content: center; align-items: center;
   aspect-ratio: 1 / 1;
-  border: 1px dashed #AAA;
-  border-radius: 4px;
-  background: rgba(255,255,255,0.2);
-  overflow: hidden;
+  border: 1px dashed #AAA; border-radius: 4px;
+  background: rgba(255,255,255,0.2); overflow: hidden;
 }
 .badge-slot-number {
-  position: absolute;
-  top: 4px; left: 6px;
-  font-size: 0.75rem;
-  color: #555;
-  font-weight: bold;
+  position: absolute; top: 4px; left: 6px;
+  font-size: 0.75rem; color: #555; font-weight: bold;
 }
 #badges-list li.badge-slot img {
   width: 100%; height: 100%; object-fit: contain;
