@@ -1,16 +1,16 @@
-// ─── 0) Intro Lottie ───────────────────────────────────────────────
+// ─── 0) Intro Lottie (masquage à la fin de l’animation) ───────────
 const introContainer = document.getElementById('lottie-intro');
-lottie.loadAnimation({
+const introAnim = lottie.loadAnimation({
   container: introContainer,
   renderer: 'svg',
   loop: false,
   autoplay: true,
-  path: 'animations/intro.json' // <-- votre fichier JSON
+  path: 'animations/intro.json' // votre fichier Lottie
 });
-// Masquer après 3s
-setTimeout(() => {
+// Dès que l’animation est terminée, on cache le conteneur
+introAnim.addEventListener('complete', () => {
   introContainer.style.display = 'none';
-}, 3000);
+});
 
 
 // ─── 1) Liste des cartes et mapping carte→badge ────────────────────
@@ -110,8 +110,8 @@ function showTab(tab) {
   }
 }
 tabProfile.addEventListener('click', () => showTab('profile'));
-tabPlay.addEventListener   ('click', () => showTab('play'));
-tabBadges.addEventListener ('click', () => showTab('badges'));
+tabPlay.addEventListener('click',   () => showTab('play'));
+tabBadges.addEventListener('click', () => showTab('badges'));
 
 // ─── Reset pour tests ─────────────────────────────────────────────
 resetBtn.addEventListener('click', () => {
@@ -122,7 +122,7 @@ resetBtn.addEventListener('click', () => {
   showTab('profile');
 });
 
-// ─── 7) Init canvas ───────────────────────────────────────────────
+// ─── 7) Initialisation du canvas ───────────────────────────────────
 function initScratch() {
   const w = area.clientWidth, h = area.clientHeight;
   canvas.width = w; canvas.height = h;
@@ -158,15 +158,15 @@ function checkDailyScratch() {
   }
 }
 
-// ─── 10) Vérif 60% ────────────────────────────────────────────────
+// ─── 10) Vérification du grattage à 60% ────────────────────────────
 function checkClear() {
   const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
   let cleared = 0;
   for (let i = 3; i < data.length; i += 4) {
     if (data[i] === 0) cleared++;
   }
-  if (cleared/(canvas.width*canvas.height)*100 >= 60) {
-    const xpTotal = parseInt(localStorage.getItem('xpTotal')||'0',10) + 20;
+  if (cleared / (canvas.width * canvas.height) * 100 >= 60) {
+    const xpTotal = parseInt(localStorage.getItem('xpTotal') || '0', 10) + 20;
     localStorage.setItem('xpTotal', xpTotal);
     updateXPDisplay();
 
@@ -175,8 +175,8 @@ function checkClear() {
     } else {
       rewardBtn.textContent = 'Déjà gratté aujourd’hui';
     }
-    rewardBtn.style.display = 'block';
-    canvas.style.pointerEvents = 'none';
+    rewardBtn.style.display       = 'block';
+    canvas.style.pointerEvents    = 'none';
   }
 }
 
@@ -185,14 +185,15 @@ function checkClear() {
   canvas.addEventListener(evt, e => {
     drawing = true;
     const p = getPos(e);
-    ctx.beginPath(); ctx.moveTo(p.x,p.y);
+    ctx.beginPath(); ctx.moveTo(p.x, p.y);
   });
 });
 ['mousemove','touchmove'].forEach(evt => {
   canvas.addEventListener(evt, e => {
     if (!drawing) return;
     const p = getPos(e);
-    ctx.lineTo(p.x,p.y); ctx.stroke();
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
   });
 });
 ['mouseup','mouseleave','touchend'].forEach(evt => {
@@ -207,12 +208,12 @@ function checkClear() {
   rewardBtn.addEventListener(evt, () => {
     if (rewardBtn.textContent === 'REWARD' || rewardBtn.textContent === 'Déjà gratté aujourd’hui') {
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       localStorage.setItem('lastScratchDate', todayISO);
 
       const badgeId = cardToBadge[currentCard];
       if (badgeId && rewardBtn.textContent === 'REWARD') {
-        const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+        const log = JSON.parse(localStorage.getItem('scratchLog') || '[]');
         if (!log.includes(badgeId)) {
           log.push(badgeId);
           localStorage.setItem('scratchLog', JSON.stringify(log));
