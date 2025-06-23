@@ -2,7 +2,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body {
   width: 100%; height: 100%;
-  background-color: #FFD1DC;
+  background-color: #FFD1DC;  /* rose pastel global */
   font-family: sans-serif;
 }
 
@@ -10,9 +10,12 @@ html, body {
 .app {
   display: flex;
   flex-direction: column;
-  width: 100%; max-width: 375px; height: 100vh;
+  width: 100%;           /* plein écran */
+  max-width: none;       /* plus de limite à 375px */
+  height: 100vh;
   margin: 0 auto;
   background-color: #FFD1DC;
+  position: relative;
 }
 
 /* vues */
@@ -110,10 +113,11 @@ html, body {
   position: sticky;
   bottom: calc(env(safe-area-inset-bottom) + 10px);
   background: transparent;
+  width: 100%;   /* pour remplir toute la largeur */
 }
 .tab {
   flex: 1;
-  padding: 1.2rem 0;            /* zone tactile plus grande */
+  padding: 1.2rem 0;
   background: #FFF;
   color: #000;
   border: none;
