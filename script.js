@@ -5,13 +5,11 @@ const introAnim = lottie.loadAnimation({
   renderer: 'svg',
   loop: false,
   autoplay: true,
-  path: 'animations/intro.json' // votre fichier Lottie
+  path: 'animations/intro.json'
 });
-// Dès que l’animation est terminée, on cache le conteneur
 introAnim.addEventListener('complete', () => {
   introContainer.style.display = 'none';
 });
-
 
 // ─── 1) Liste des cartes et mapping carte→badge ────────────────────
 const cards = ['card1', 'card2', 'card3', 'card4'];
@@ -160,7 +158,7 @@ function checkDailyScratch() {
 
 // ─── 10) Vérification du grattage à 60% ────────────────────────────
 function checkClear() {
-  const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  const data = ctx.getImageData(0,0,canvas.width,canvas. height).data;
   let cleared = 0;
   for (let i = 3; i < data.length; i += 4) {
     if (data[i] === 0) cleared++;
@@ -175,8 +173,8 @@ function checkClear() {
     } else {
       rewardBtn.textContent = 'Déjà gratté aujourd’hui';
     }
-    rewardBtn.style.display       = 'block';
-    canvas.style.pointerEvents    = 'none';
+    rewardBtn.style.display    = 'block';
+    canvas.style.pointerEvents = 'none';
   }
 }
 
@@ -185,15 +183,14 @@ function checkClear() {
   canvas.addEventListener(evt, e => {
     drawing = true;
     const p = getPos(e);
-    ctx.beginPath(); ctx.moveTo(p.x, p.y);
+    ctx.beginPath(); ctx.moveTo(p.x,p.y);
   });
 });
 ['mousemove','touchmove'].forEach(evt => {
   canvas.addEventListener(evt, e => {
     if (!drawing) return;
     const p = getPos(e);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
+    ctx.lineTo(p.x,p.y); ctx.stroke();
   });
 });
 ['mouseup','mouseleave','touchend'].forEach(evt => {
@@ -206,9 +203,10 @@ function checkClear() {
 // ─── 12) Clic REWARD ──────────────────────────────────────────────
 ['click','touchend'].forEach(evt => {
   rewardBtn.addEventListener(evt, () => {
-    if (rewardBtn.textContent === 'REWARD' || rewardBtn.textContent === 'Déjà gratté aujourd’hui') {
+    if (rewardBtn.textContent === 'REWARD' ||
+        rewardBtn.textContent === 'Déjà gratté aujourd’hui') {
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
       localStorage.setItem('lastScratchDate', todayISO);
 
       const badgeId = cardToBadge[currentCard];
@@ -252,5 +250,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(err => console.error(err));
 }
 
-// Démarrage
-showTab('profile');
+// ─── 15) Forcer l'onglet Profil au démarrage ──────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  showTab('profile');
+});
