@@ -1,9 +1,39 @@
-// ─── 0) Préload des sound effects ─────────────────────────────────
-const tabSfx      = new Audio('sounds/tab-click.mp3');
-const validateSfx = new Audio('sounds/validate.mp3');
-const rewardSfx   = new Audio('sounds/reward.mp3');
+// ─── WebAudio setup pour ultra-low-latency ─────────────────────────
+// 1) Création du contexte et déverrouillage au premier touch
+const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+document.body.addEventListener('touchstart', () => {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}, { once: true });
 
-// ─── 1) Intro Lottie (masquage à la fin de l’animation) ───────────
+// 2) Liste de vos fichiers SFX et buffers
+const SFX_FILES = {
+  tab:      'sounds/tab-click.mp3',
+  validate: 'sounds/validate.mp3',
+  reward:   'sounds/reward.mp3'
+};
+const sfxBuffers = {};
+
+// Charge et décode chaque son
+async function loadSfx(name, url) {
+  const resp = await fetch(url);
+  const arrayBuffer = await resp.arrayBuffer();
+  sfxBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
+}
+Promise.all(Object.entries(SFX_FILES).map(
+  ([name,url]) => loadSfx(name, url)
+));
+
+// 3) Fonction pour jouer un son immédiatement
+function playSfx(name) {
+  const buf = sfxBuffers[name];
+  if (!buf) return;              // pas encore prêt
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.connect(audioCtx.destination);
+  src.start(0);
+}
+
+// ─── 0) Intro Lottie (masquage à la fin de l’animation) ───────────
 const introContainer = document.getElementById('lottie-intro');
 const introAnim = lottie.loadAnimation({
   container: introContainer,
@@ -16,7 +46,7 @@ introAnim.addEventListener('complete', () => {
   introContainer.style.display = 'none';
 });
 
-// ─── 2) Liste des cartes et mapping carte→badge ────────────────────
+// ─── 1) Liste des cartes et mapping carte→badge ────────────────────
 const cards = ['card1', 'card2', 'card3', 'card4'];
 const cardToBadge = {
   'card1': 'badge1',
@@ -25,7 +55,7 @@ const cardToBadge = {
   'card4': 'badge4'
 };
 
-// ─── 3) Sélection « une carte par jour » depuis la première ouverture ───
+// ─── 2) Sélection « une carte par jour » depuis la première ouverture ───
 let start = localStorage.getItem('startDate');
 const todayISO = new Date().toISOString().slice(0,10);
 if (!start) {
@@ -38,7 +68,7 @@ const msPerDay    = 1000 * 60 * 60 * 24;
 const daysElapsed = Math.floor((todayDate - startDate) / msPerDay);
 const currentCard = cards[ daysElapsed % cards.length ];
 
-// ─── 4) Récupération du DOM ───────────────────────────────────────
+// ─── 3) Récupération du DOM ───────────────────────────────────────
 const tabProfile    = document.getElementById('tab-profile');
 const tabPlay       = document.getElementById('tab-play');
 const tabBadges     = document.getElementById('tab-badges');
@@ -62,7 +92,7 @@ const profileHeader = document.getElementById('profile-header');
 
 let drawing = false;
 
-// ─── 5) Gestion du pseudo ─────────────────────────────────────────
+// ─── 4) Gestion du pseudo ─────────────────────────────────────────
 function checkPseudo() {
   const stored = localStorage.getItem('pseudo');
   if (stored) {
@@ -76,16 +106,14 @@ function checkPseudo() {
   }
 }
 pseudoBtn.addEventListener('click', () => {
-  validateSfx.currentTime = 0;
-  validateSfx.play();
-
+  playSfx('validate');
   const v = pseudoInput.value.trim();
   if (!v) return;
   localStorage.setItem('pseudo', v);
   checkPseudo();
 });
 
-// ─── 6) Mise à jour XP & “Level of love” ─────────────────────────
+// ─── 5) Mise à jour XP & “Level of love” ─────────────────────────
 function updateXPDisplay() {
   const xpTotal = parseInt(localStorage.getItem('xpTotal') || '0', 10);
   const level   = Math.floor(xpTotal / 100);
@@ -95,13 +123,11 @@ function updateXPDisplay() {
   xpText.textContent       = `XP : ${rem}/100`;
 }
 
-// ─── 7) Bascule d’onglet (avec SFX) ─────────────────────────────────
+// ─── 6) Bascule d’onglet (avec SFX) ─────────────────────────────────
 function showTab(tab) {
   [viewProfile, viewPlay, viewBadges].forEach(v => v.classList.remove('active'));
   [tabProfile, tabPlay, tabBadges].forEach(t => t.classList.remove('active'));
-
-  tabSfx.currentTime = 0;
-  tabSfx.play();
+  playSfx('tab');
 
   if (tab === 'profile') {
     viewProfile.classList.add('active');
@@ -125,7 +151,7 @@ tabProfile.addEventListener('click', () => showTab('profile'));
 tabPlay.addEventListener('click',    () => showTab('play'));
 tabBadges.addEventListener('click',  () => showTab('badges'));
 
-// ─── 8) Reset pour tests ───────────────────────────────────────────
+// ─── 7) Reset pour tests ───────────────────────────────────────────
 resetBtn.addEventListener('click', () => {
   localStorage.removeItem('scratchLog');
   localStorage.removeItem('lastScratchDate');
@@ -134,7 +160,7 @@ resetBtn.addEventListener('click', () => {
   showTab('profile');
 });
 
-// ─── 9) Initialisation du canvas ───────────────────────────────────
+// ─── 8) Initialisation du canvas ───────────────────────────────────
 function initScratch() {
   const w = area.clientWidth, h = area.clientHeight;
   canvas.width  = w;
@@ -148,7 +174,7 @@ function initScratch() {
 }
 window.addEventListener('resize', initScratch);
 
-// ─── 10) Position du curseur ───────────────────────────────────────
+// ─── 9) Position du curseur ───────────────────────────────────────
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
   return {
@@ -157,7 +183,7 @@ function getPos(e) {
   };
 }
 
-// ─── 11) Limite 1 scratch/jour ─────────────────────────────────────
+// ─── 10) Limite 1 scratch/jour ─────────────────────────────────────
 function checkDailyScratch() {
   const last = localStorage.getItem('lastScratchDate');
   if (last === todayISO) {
@@ -173,7 +199,7 @@ function checkDailyScratch() {
   }
 }
 
-// ─── 12) Vérification du grattage à 60% ────────────────────────────
+// ─── 11) Vérification du grattage à 60% ────────────────────────────
 function checkClear() {
   const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
   let cleared = 0;
@@ -185,17 +211,13 @@ function checkClear() {
     localStorage.setItem('xpTotal', xpTotal);
     updateXPDisplay();
 
-    if (cardToBadge[currentCard]) {
-      rewardBtn.textContent = 'REWARD';
-    } else {
-      rewardBtn.textContent = 'Déjà gratté aujourd’hui';
-    }
+    rewardBtn.textContent = cardToBadge[currentCard] ? 'REWARD' : 'Déjà gratté aujourd’hui';
     rewardBtn.style.display    = 'block';
     canvas.style.pointerEvents = 'none';
   }
 }
 
-// ─── 13) Événements de grattage ──────────────────────────────────
+// ─── 12) Événements de grattage ──────────────────────────────────
 ['mousedown', 'touchstart'].forEach(evt => {
   canvas.addEventListener(evt, e => {
     drawing = true;
@@ -219,21 +241,19 @@ function checkClear() {
   });
 });
 
-// ─── 14) Clic REWARD (avec SFX) ───────────────────────────────────
+// ─── 13) Clic REWARD (avec SFX) ───────────────────────────────────
 ['click', 'touchend'].forEach(evt => {
   rewardBtn.addEventListener(evt, () => {
     if (
       rewardBtn.textContent === 'REWARD' ||
       rewardBtn.textContent === 'Déjà gratté aujourd’hui'
     ) {
-      rewardSfx.currentTime = 0;
-      rewardSfx.play();
-
+      playSfx('reward');
       ctx.globalCompositeOperation = 'destination-out';
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       localStorage.setItem('lastScratchDate', todayISO);
 
-      const badgeId = cardToBadge[ currentCard ];
+      const badgeId = cardToBadge[currentCard];
       if (badgeId && rewardBtn.textContent === 'REWARD') {
         const log = JSON.parse(localStorage.getItem('scratchLog') || '[]');
         if (!log.includes(badgeId)) {
@@ -246,7 +266,7 @@ function checkClear() {
   });
 });
 
-// ─── 15) Affichage des badges ─────────────────────────────────────
+// ─── 14) Affichage des badges ─────────────────────────────────────
 function renderBadges() {
   const ul = document.getElementById('badges-list');
   ul.innerHTML = '';
@@ -269,12 +289,12 @@ function renderBadges() {
   }
 }
 
-// ─── 16) Service Worker ──────────────────────────────────────────
+// ─── 15) Service Worker ──────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(err => console.error(err));
 }
 
-// ─── 17) Forcer l'onglet Profil au démarrage ──────────────────────
+// ─── 16) Forcer l'onglet Profil au démarrage ──────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   showTab('profile');
 });
