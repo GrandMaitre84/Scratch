@@ -264,3 +264,8 @@ body::after {
   background: #28A745;
   transition: width 0.3s ease;
 }
+
+/* Overlay Lottie badge : transparent pour dévoiler la grille */
+#lottie-badge {
+  background: transparent !important;
+}
