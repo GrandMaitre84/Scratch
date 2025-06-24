@@ -14,7 +14,6 @@ const SFX_FILES = {
   badge:    'sounds/badge.mp3'
 };
 const sfxBuffers = {};
-
 async function loadSfx(name, url) {
   try {
     const resp = await fetch(url);
@@ -25,7 +24,6 @@ async function loadSfx(name, url) {
   }
 }
 Promise.all(Object.entries(SFX_FILES).map(([n, u]) => loadSfx(n, u)));
-
 function playSfx(name) {
   const buf = sfxBuffers[name];
   if (!buf) return;
@@ -220,116 +218,77 @@ window.addEventListener('resize', initScratch);
 // ───10) Curseur ─────────────────────────────────────────────────
 function getPos(e){
   const r = canvas.getBoundingClientRect();
-  return { x: (e.touches?e.touches[0].clientX:e.clientX) - r.left, y: (e.touches?e.touches[0].clientY:e.clientY) - r.top };
+  return { x: (e.touches?e.touches[0].clientX:e.clientX)-r.left, y: (e.touches?e.touches[0].clientY:e.clientY)-r.top };
 }
 
 // ───11) Limite 1 scratch/jour ────────────────────────────────────
 function checkDailyScratch(){
   const last = localStorage.getItem('lastScratchDate');
   if (last===todayISO){
-    canvas.style.pointerEvents = 'none';
-    canvas.style.opacity       = '0.5';
-    rewardBtn.style.display    = 'none';
-    doneBtn.style.display      = 'none';
-    scratchStatus.textContent  = 'NEXT SCRATCH TOMORROW';
-    scratchStatus.style.display= 'block';
+    canvas.style.pointerEvents='none'; canvas.style.opacity='0.5';
+    rewardBtn.style.display='none'; doneBtn.style.display='none';
+    scratchStatus.textContent='NEXT SCRATCH TOMORROW'; scratchStatus.style.display='block';
   } else {
-    initScratch();
-    canvas.style.pointerEvents = 'auto';
-    canvas.style.opacity       = '1';
-    rewardBtn.style.display    = 'none';
-    doneBtn.style.display      = 'none';
-    scratchStatus.style.display= 'none';
+    initScratch(); canvas.style.pointerEvents='auto'; canvas.style.opacity='1';
+    rewardBtn.style.display='none'; doneBtn.style.display='none'; scratchStatus.style.display='none';
   }
 }
 
 // ───12) Vérif 70% ────────────────────────────────────────────────
 function checkClear(){
   const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
-  let cleared = 0;
-  for (let i=3; i<data.length; i+=4) if(data[i]===0) cleared++;
-  if (cleared/(canvas.width*canvas.height)*100 >= 70){
-    const cnt = parseInt(localStorage.getItem('scratchCount')||'0',10) + 1;
-    localStorage.setItem('scratchCount', cnt);
+  let cleared=0; for (let i=3; i<data.length; i+=4) if(data[i]===0) cleared++;
+  if(cleared/(canvas.width*canvas.height)*100>=70){
+    const cnt=parseInt(localStorage.getItem('scratchCount')||'0',10)+1; localStorage.setItem('scratchCount',cnt);
     updateProfileStats();
-    const xpTotal = parseInt(localStorage.getItem('xpTotal')||'0',10) + 20;
-    localStorage.setItem('xpTotal', xpTotal);
+    const xpTotal=parseInt(localStorage.getItem('xpTotal')||'0',10)+20; localStorage.setItem('xpTotal',xpTotal);
     updateXPDisplay();
-    if (cardToBadge[currentCard]){
-      rewardBtn.textContent   = 'REWARD';
-      rewardBtn.style.display = 'block';
-      doneBtn.style.display   = 'none';
-      scratchStatus.style.display = 'none';
-    } else {
-      doneBtn.style.display     = 'block';
-      rewardBtn.style.display   = 'none';
-      scratchStatus.style.display = 'none';
-    }
-    canvas.style.pointerEvents = 'none';
+    if(cardToBadge[currentCard]){ rewardBtn.textContent='REWARD'; rewardBtn.style.display='block'; doneBtn.style.display='none'; scratchStatus.style.display='none'; }
+    else { doneBtn.style.display='block'; rewardBtn.style.display='none'; scratchStatus.style.display='none'; }
+    canvas.style.pointerEvents='none';
   }
 }
 
-// ───13) Grattage events ──────────────────────────────────────────
-['mousedown','touchstart'].forEach(evt => canvas.addEventListener(evt, e => { startScratchSfx(); drawing=true; const p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); }));
-['mousemove','touchmove'].forEach(evt => canvas.addEventListener(evt, e => { if(!drawing) return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); }));
-['mouseup','mouseleave','touchend'].forEach(evt => canvas.addEventListener(evt, () => { stopScratchSfx(); if(drawing) checkClear(); drawing=false; }));
+// ───13) Grattage events ─────────────────────────────────────────
+['mousedown','touchstart'].forEach(evt=> canvas.addEventListener(evt, e=>{ startScratchSfx(); drawing=true; const p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); }));
+['mousemove','touchmove'].forEach(evt=> canvas.addEventListener(evt, e=>{ if(!drawing) return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); }));
+['mouseup','mouseleave','touchend'].forEach(evt=> canvas.addEventListener(evt, ()=>{ stopScratchSfx(); if(drawing) checkClear(); drawing=false; }));
 
 // ───14) Clic REWARD → lance anim badge + son badge ────────────────
-rewardBtn.addEventListener('click', function onRewardClick() {
+let rewardTriggered = false;
+function handleReward(evt) {
+  evt.preventDefault();
+  if (rewardTriggered) return;
+  rewardTriggered = true;
   if (rewardBtn.textContent !== 'REWARD') return;
-  rewardBtn.removeEventListener('click', onRewardClick);
-  playSfx('reward');
-  playSfx('badge');
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  localStorage.setItem('lastScratchDate', todayISO);
+  playSfx('reward'); playSfx('badge');
+  ctx.globalCompositeOperation='destination-out'; ctx.clearRect(0,0,canvas.width,canvas.height);
+  localStorage.setItem('lastScratchDate',todayISO);
   const badgeId = cardToBadge[currentCard];
   const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
-  if (badgeId && !log.includes(badgeId)) {
-    log.push(badgeId);
-    localStorage.setItem('scratchLog', JSON.stringify(log));
-  }
-  badgeContainer.style.display = 'flex';
-  badgeAnim.goToAndPlay(0, true);
-});
+  if (badgeId && !log.includes(badgeId)) { log.push(badgeId); localStorage.setItem('scratchLog',JSON.stringify(log)); }
+  badgeContainer.style.display='flex'; badgeAnim.goToAndPlay(0,true);
+}
+rewardBtn.addEventListener('touchend', handleReward, { passive: false });
+rewardBtn.addEventListener('click', handleReward);
 
-// ───15) clic DONE ─────────────────────────────────────────────────
-doneBtn.addEventListener('click', () => {
-  playSfx('tab');
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  localStorage.setItem('lastScratchDate', todayISO);
-  doneBtn.style.display       = 'none';
-  scratchStatus.textContent   = 'NEXT SCRATCH TOMORROW';
-  scratchStatus.style.display = 'block';
-});
+// ───15) clic DONE ────────────────────────────────────────────────
+doneBtn.addEventListener('click', ()=>{ playSfx('tab'); ctx.globalCompositeOperation='destination-out'; ctx.clearRect(0,0,canvas.width,canvas.height); localStorage.setItem('lastScratchDate',todayISO); doneBtn.style.display='none'; scratchStatus.textContent='NEXT SCRATCH TOMORROW'; scratchStatus.style.display='block'; });
 
 // ───16) Rendu badges ─────────────────────────────────────────────
 function renderBadges(){
-  const ul = document.getElementById('badges-list');
-  ul.innerHTML = '';
-  const SLOTS = 30, won = JSON.parse(localStorage.getItem('scratchLog')||'[]');
-  for (let i=0; i<SLOTS; i++){
-    const li = document.createElement('li');
-    li.classList.add('badge-slot');
-    const num = document.createElement('span');
-    num.classList.add('badge-slot-number');
-    num.textContent = i+1;
-    li.appendChild(num);
-    if (won[i]){
-      const img = document.createElement('img');
-      img.src = `images/${won[i]}.png`;
-      img.alt = `Badge ${won[i]}`;
-      li.appendChild(img);
-    }
+  const ul=document.getElementById('badges-list'); ul.innerHTML='';
+  const SLOTS=30, won=JSON.parse(localStorage.getItem('scratchLog')||'[]');
+  for(let i=0;i<SLOTS;i++){
+    const li=document.createElement('li'); li.classList.add('badge-slot');
+    const num=document.createElement('span'); num.classList.add('badge-slot-number'); num.textContent=i+1; li.appendChild(num);
+    if(won[i]){ const img=document.createElement('img'); img.src=`images/${won[i]}.png`; img.alt=`Badge ${won[i]}`; li.appendChild(img); }
     ul.appendChild(li);
   }
 }
 
-// ───17) Service Worker ──────────────────────────────────────────
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(console.error);
-}
+// ───17) Service Worker ─────────────────────────────────────────
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(console.error); }
 
 // ───18) Démarrage onglet Profil ─────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => showTab('profile'));
+document.addEventListener('DOMContentLoaded', ()=> showTab('profile'));
