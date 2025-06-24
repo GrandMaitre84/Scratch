@@ -73,7 +73,7 @@ const badgeAnim = lottie.loadAnimation({
 });
 badgeAnim.addEventListener('complete', () => {
   badgeContainer.style.display = 'none';
-  showTab('badges');
+  // L'onglet Badges est déjà affiché avant l'animation
 });
 
 // ─── 1) Cartes & badges ─────────────────────────────────────────
@@ -263,8 +263,10 @@ function handleReward(evt) {
 
   if (rewardBtn.textContent !== 'REWARD') return;
 
-  // Pré-rendu de la grille des badges pour qu’elle soit prête
+  // Pré-rendu de la grille des badges et affichage immédiat de l'onglet
   renderBadges();
+  showTab('badges');
+
 
   evt.preventDefault();
   if (rewardTriggered) return;
