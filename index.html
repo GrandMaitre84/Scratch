@@ -36,34 +36,38 @@
               background:#FFD1DC; z-index:200;">
   </div>
 
+  <!-- conteneur d’animation badge (caché par défaut) -->
+  <div id="lottie-badge"
+       style="display:none;
+              position:fixed; top:0; left:0;
+              width:100vw; height:100vh;
+              background:rgba(0,0,0,0.5);
+              z-index:300;
+              justify-content:center;
+              align-items:center;">
+  </div>
+
   <div class="app">
 
     <!-- PROFIL -->
     <div id="view-profile" class="view active">
-
-      <!-- STATUTS en Cartes (masqué par défaut, révélé après validation) -->
       <div class="profile-stats" style="display:none;">
-        <!-- Carte Pseudo (full width) -->
         <div class="stat-card full-width" id="card-pseudo">
           <strong>Pseudo</strong>
           <p id="pseudo-display"></p>
         </div>
-        <!-- Carte Cartes Grattées -->
         <div class="stat-card" id="cards-scratched-card">
           <strong>Cards scratched</strong>
           <p id="cards-scratched">0</p>
         </div>
-        <!-- Carte Rewards -->
         <div class="stat-card" id="rewards-count-card">
           <strong>Rewards</strong>
           <p id="rewards-count">0</p>
         </div>
-        <!-- Carte Level -->
         <div class="stat-card" id="level-card">
           <strong>Level of love</strong>
           <p id="level-display">0</p>
         </div>
-        <!-- Carte XP (full width) -->
         <div class="stat-card full-width" id="xp-card">
           <strong>XP Progress</strong>
           <div class="progress-bar">
@@ -72,14 +76,10 @@
           <p id="xp-text">0/100</p>
         </div>
       </div>
-
-      <!-- Formulaire de saisie du pseudo (toujours visible tant que pas validé) -->
       <div id="profile-form" class="center-form">
         <input id="pseudo-input" type="text" placeholder="Entrez votre pseudo" />
         <button id="pseudo-btn">Valider</button>
       </div>
-
-      <!-- Bouton reset en bas pour tests -->
       <button id="reset-btn">Réinitialiser l’app</button>
     </div>
 
