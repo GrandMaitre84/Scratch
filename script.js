@@ -257,6 +257,15 @@ function checkClear(){
 // ───14) Clic REWARD → lance anim badge + son badge ────────────────
 let rewardTriggered = false;
 function handleReward(evt) {
+  evt.preventDefault();          // empêche le ghost click sous touch
+  if (rewardTriggered) return;   // déjà exécuté, on sort
+  rewardTriggered = true;        // on verrouille
+
+  if (rewardBtn.textContent !== 'REWARD') return;
+
+  // Pré-rendu de la grille des badges pour qu’elle soit prête
+  renderBadges();
+
   evt.preventDefault();
   if (rewardTriggered) return;
   rewardTriggered = true;
