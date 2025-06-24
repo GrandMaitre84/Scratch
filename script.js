@@ -35,7 +35,7 @@ function playSfx(name) {
 
 // scratch sound loop
 let scratchSource = null;
-function startScratchSfx(){
+function startScratchSfx() {
   if (scratchSource || !sfxBuffers['scratch']) return;
   scratchSource = audioCtx.createBufferSource();
   scratchSource.buffer = sfxBuffers['scratch'];
@@ -43,7 +43,7 @@ function startScratchSfx(){
   scratchSource.connect(audioCtx.destination);
   scratchSource.start(0);
 }
-function stopScratchSfx(){
+function stopScratchSfx() {
   if (!scratchSource) return;
   scratchSource.stop();
   scratchSource = null;
@@ -71,85 +71,80 @@ const badgeAnim = lottie.loadAnimation({
   autoplay: false,
   path: 'animations/badge.json'
 });
-badgeAnim.setSpeed(2);  // accélère l'animation
+badgeAnim.setSpeed(2);
 badgeAnim.addEventListener('complete', () => {
   badgeContainer.style.display = 'none';
 });
 
-// ─── 1) Cartes & badges ─────────────────────────────────────────
-const cards = ['card1','card2','card3','card4'];
-const cardToBadge = {
-  card1: 'badge1',
-  card2: null,
-  card3: null,
-  card4: 'badge4'
-};
+// ─── 1) Cartes & cartes dynamiques ─────────────────────────────
+const cards = [
+  'card1','card2','card3','card4','card5',
+  'card6','card7','card8','card9','card10'
+];
+const cardToBadge = {};
+
+// Vérifie l'existence de badgeX.png pour chaque carte
+async function initCardToBadge() {
+  await Promise.all(cards.map(async card => {
+    const badgeId = card.replace('card', 'badge');
+    try {
+      const resp = await fetch(`images/${badgeId}.png`, { method: 'HEAD' });
+      cardToBadge[card] = resp.ok ? badgeId : null;
+    } catch {
+      cardToBadge[card] = null;
+    }
+  }));
+}
 
 // ─── 2) Carte du jour ───────────────────────────────────────────
-let start = localStorage.getItem('startDate');
+let startDate = localStorage.getItem('startDate');
 const todayISO = new Date().toISOString().slice(0,10);
-if (!start) {
+if (!startDate) {
   localStorage.setItem('startDate', todayISO);
-  start = todayISO;
+  startDate = todayISO;
 }
-const daysElapsed = Math.floor((new Date(todayISO) - new Date(start)) / 86400000);
+const daysElapsed = Math.floor((new Date(todayISO) - new Date(startDate)) / 86400000);
 const currentCard = cards[daysElapsed % cards.length];
 
-// ─── 3) DOM ─────────────────────────────────────────────────────
-const tabProfile     = document.getElementById('tab-profile');
-const tabPlay        = document.getElementById('tab-play');
-const tabBadges      = document.getElementById('tab-badges');
-const viewProfile    = document.getElementById('view-profile');
-const viewPlay       = document.getElementById('view-play');
-const viewBadges     = document.getElementById('view-badges');
-const resetBtn       = document.getElementById('reset-btn');
-const area           = document.getElementById('scratch-area');
-const canvas         = document.getElementById('scratchCanvas');
-const ctx            = canvas.getContext('2d');
-const rewardBtn      = document.getElementById('reward-btn');
-const pseudoInput    = document.getElementById('pseudo-input');
-const pseudoBtn      = document.getElementById('pseudo-btn');
-const pseudoSpan     = document.getElementById('pseudo-display');
-const levelDisplay   = document.getElementById('level-display');
-const xpBar          = document.getElementById('xp-bar');
-const xpText         = document.getElementById('xp-text');
-const scratchImage   = document.getElementById('scratch-image');
-const profileForm    = document.getElementById('profile-form');
-const profileStats   = document.querySelector('.profile-stats');
-const cardsDisplay   = document.getElementById('cards-scratched');
+// ─── 3) DOM Elements ─────────────────────────────────────────────
+const tabProfile   = document.getElementById('tab-profile');
+const tabPlay      = document.getElementById('tab-play');
+const tabBadges    = document.getElementById('tab-badges');
+const viewProfile  = document.getElementById('view-profile');
+const viewPlay     = document.getElementById('view-play');
+const viewBadges   = document.getElementById('view-badges');
+const resetBtn     = document.getElementById('reset-btn');
+const area         = document.getElementById('scratch-area');
+const canvas       = document.getElementById('scratchCanvas');
+const ctx          = canvas.getContext('2d');
+const rewardBtn    = document.getElementById('reward-btn');
+const pseudoInput  = document.getElementById('pseudo-input');
+const pseudoBtn    = document.getElementById('pseudo-btn');
+const pseudoSpan   = document.getElementById('pseudo-display');
+const levelDisplay = document.getElementById('level-display');
+const xpBar        = document.getElementById('xp-bar');
+const xpText       = document.getElementById('xp-text');
+const scratchImage = document.getElementById('scratch-image');
+const profileForm  = document.getElementById('profile-form');
+const profileStats = document.querySelector('.profile-stats');
+const cardsDisplay = document.getElementById('cards-scratched');
 const rewardsDisplay = document.getElementById('rewards-count');
 
-// statut & bouton DONE
+// statut & Done
 const scratchStatus = document.createElement('p');
 scratchStatus.id = 'scratch-status';
 Object.assign(scratchStatus.style, {
-  display: 'none',
-  margin: '1rem auto 0',
-  padding: '.5rem 1rem',
-  background: '#28A745',
-  color: '#FFF',
-  borderRadius: '4px',
-  width: '80%',
-  maxWidth: '300px',
-  textAlign: 'center'
+  display: 'none', margin: '1rem auto 0', padding: '.5rem 1rem',
+  background: '#28A745', color: '#FFF', borderRadius: '4px',
+  width: '80%', maxWidth: '300px', textAlign: 'center'
 });
 rewardBtn.insertAdjacentElement('afterend', scratchStatus);
-
 const doneBtn = document.createElement('button');
-doneBtn.id = 'done-btn';
-doneBtn.textContent = 'DONE';
+doneBtn.id = 'done-btn'; doneBtn.textContent = 'DONE';
 Object.assign(doneBtn.style, {
-  display: 'none',
-  margin: '1rem auto 0',
-  padding: '.5rem 1rem',
-  background: '#28A745',
-  color: '#FFF',
-  border: 'none',
-  borderRadius: '4px',
-  width: '80%',
-  maxWidth: '300px',
-  cursor: 'pointer',
-  fontSize: '16px',
+  display: 'none', margin: '1rem auto 0', padding: '.5rem 1rem',
+  background: '#28A745', color: '#FFF', border: 'none', borderRadius: '4px',
+  width: '80%', maxWidth: '300px', cursor: 'pointer', fontSize: '16px',
   transition: 'background .2s ease'
 });
 doneBtn.addEventListener('mouseenter', () => doneBtn.style.background = '#218838');
@@ -160,26 +155,19 @@ let drawing = false;
 let rewardTriggered = false;
 let doneTriggered = false;
 
-// ─── 4) Gestion du pseudo ────────────────────────────────────────
+// ─── 4) Pseudo management ────────────────────────────────────────
 function checkPseudo() {
   const stored = localStorage.getItem('pseudo');
   if (stored) {
-    profileForm.style.display = 'none';
-    profileStats.style.display = 'flex';
-    pseudoSpan.textContent = stored;
+    profileForm.style.display = 'none'; profileStats.style.display = 'flex'; pseudoSpan.textContent = stored;
   } else {
-    profileForm.style.display = 'flex';
-    profileStats.style.display = 'none';
-    pseudoSpan.textContent = '';
+    profileForm.style.display = 'flex'; profileStats.style.display = 'none'; pseudoSpan.textContent = '';
   }
 }
 pseudoBtn.addEventListener('click', () => {
-  playSfx('tab');
-  playSfx('validate');
-  const v = pseudoInput.value.trim();
-  if (!v) return;
-  localStorage.setItem('pseudo', v);
-  checkPseudo();
+  playSfx('tab'); playSfx('validate');
+  const v = pseudoInput.value.trim(); if (!v) return;
+  localStorage.setItem('pseudo', v); checkPseudo();
 });
 
 // ─── 5) Stats Profil ─────────────────────────────────────────────
@@ -189,45 +177,38 @@ function updateProfileStats() {
   rewardsDisplay.textContent = JSON.parse(localStorage.getItem('scratchLog') || '[]').length;
 }
 
-// ─── 6) XP & Level ───────────────────────────────────────────────
+// ─── 6) XP & Level display ───────────────────────────────────────
 function updateXPDisplay() {
   const xpTotal = parseInt(localStorage.getItem('xpTotal') || '0', 10);
   const level = Math.floor(xpTotal / 100);
   const rem = xpTotal % 100;
-  levelDisplay.textContent = level;
-  xpBar.style.width = `${rem}%`;
-  xpText.textContent = `${rem}/100`;
+  levelDisplay.textContent = level; xpBar.style.width = `${rem}%`; xpText.textContent = `${rem}/100`;
 }
 
-// ─── 7) Onglets (SFX) ────────────────────────────────────────────
+// ─── 7) Onglets ─────────────────────────────────────────────────
 function showTab(tab) {
   [viewProfile, viewPlay, viewBadges].forEach(v => v.classList.remove('active'));
   [tabProfile, tabPlay, tabBadges].forEach(t => t.classList.remove('active'));
   playSfx('tab');
   if (tab === 'profile') {
-    viewProfile.classList.add('active');
-    tabProfile.classList.add('active');
+    viewProfile.classList.add('active'); tabProfile.classList.add('active');
     checkPseudo(); updateXPDisplay(); updateProfileStats();
   }
   if (tab === 'play') {
-    viewPlay.classList.add('active');
-    tabPlay.classList.add('active');
-    scratchImage.src = `images/${currentCard}.png`;
-    checkDailyScratch();
+    viewPlay.classList.add('active'); tabPlay.classList.add('active');
+    scratchImage.src = `images/${currentCard}.png`; checkDailyScratch();
   }
   if (tab === 'badges') {
-    renderBadges();
-    viewBadges.classList.add('active');
-    tabBadges.classList.add('active');
+    renderBadges(); viewBadges.classList.add('active'); tabBadges.classList.add('active');
   }
 }
 tabProfile.addEventListener('click', () => showTab('profile'));
 tabPlay.addEventListener('click', () => showTab('play'));
 tabBadges.addEventListener('click', () => showTab('badges'));
 
-// ─── 8) Reset tests ──────────────────────────────────────────────
+// ─── 8) Reset ────────────────────────────────────────────────────
 resetBtn.addEventListener('click', () => {
-  ['scratchLog', 'lastScratchDate', 'xpTotal', 'pseudo', 'scratchCount'].forEach(k => localStorage.removeItem(k));
+  ['scratchLog','lastScratchDate','xpTotal','pseudo','scratchCount'].forEach(k => localStorage.removeItem(k));
   checkPseudo(); showTab('profile');
 });
 
@@ -235,20 +216,16 @@ resetBtn.addEventListener('click', () => {
 function initScratch() {
   const w = area.clientWidth, h = area.clientHeight;
   canvas.width = w; canvas.height = h;
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = '#999'; ctx.fillRect(0, 0, w, h);
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.lineWidth = 30; ctx.lineCap = 'round';
+  ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#999'; ctx.fillRect(0, 0, w, h);
+  ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = 30; ctx.lineCap = 'round';
 }
 window.addEventListener('resize', initScratch);
 
 // ───10) Position curseur ─────────────────────────────────────────
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
-  return {
-    x: (e.touches ? e.touches[0].clientX : e.clientX) - r.left,
-    y: (e.touches ? e.touches[0].clientY : e.clientY) - r.top
-  };
+  return { x: (e.touches ? e.touches[0].clientX : e.clientX) - r.left,
+           y: (e.touches ? e.touches[0].clientY : e.clientY) - r.top };
 }
 
 // ───11) Limite 1 scratch/jour ────────────────────────────────────
@@ -257,31 +234,30 @@ function checkDailyScratch() {
   if (last === todayISO) {
     canvas.style.pointerEvents = 'none'; canvas.style.opacity = '0.5';
     rewardBtn.style.display = 'none'; doneBtn.style.display = 'none';
-    scratchStatus.textContent = 'NEXT SCRATCH TOMORROW'; scratchStatus.style.display='block';
+    scratchStatus.textContent = 'NEXT SCRATCH TOMORROW'; scratchStatus.style.display = 'block';
   } else {
-    initScratch(); canvas.style.pointerEvents='auto'; canvas.style.opacity='1';
-    rewardBtn.style.display='none'; doneBtn.style.display='none'; scratchStatus.style.display='none';
+    initScratch(); canvas.style.pointerEvents = 'auto'; canvas.style.opacity = '1';
+    rewardBtn.style.display = 'none'; doneBtn.style.display = 'none'; scratchStatus.style.display = 'none';
   }
 }
 
 // ───12) Vérif 70% ────────────────────────────────────────────────
 function checkClear() {
   const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
-  let cleared = 0;
-  for (let i = 3; i < data.length; i += 4) if (data[i] === 0) cleared++;
-  if (cleared/(canvas.width*canvas.height)*100 >= 70) {
-    const cnt = (parseInt(localStorage.getItem('scratchCount')||'0',10) + 1);
-    localStorage.setItem('scratchCount', cnt);
-    updateProfileStats();
-    const xpTotal = (parseInt(localStorage.getItem('xpTotal')||'0',10) + 20);
-    localStorage.setItem('xpTotal', xpTotal);
-    updateXPDisplay();
+  let cleared = 0; for (let i = 3; i < data.length; i += 4) if (data[i] === 0) cleared++;
+  if (cleared / (canvas.width * canvas.height) * 100 >= 70) {
+    const cnt = (parseInt(localStorage.getItem('scratchCount') || '0', 10) + 1);
+    localStorage.setItem('scratchCount', cnt); updateProfileStats();
+    const xpTotal = (parseInt(localStorage.getItem('xpTotal') || '0', 10) + 20);
+    localStorage.setItem('xpTotal', xpTotal); updateXPDisplay();
     if (cardToBadge[currentCard]) {
-      rewardBtn.textContent = 'REWARD'; rewardBtn.style.display = 'block'; scratchStatus.style.display='none';
+      rewardBtn.textContent = 'REWARD'; rewardBtn.style.display = 'block';
+      scratchStatus.style.display = 'none';
     } else {
-      doneBtn.style.display = 'block'; rewardBtn.style.display='none'; scratchStatus.style.display='none';
+      doneBtn.style.display = 'block'; rewardBtn.style.display = 'none';
+      scratchStatus.style.display = 'none';
     }
-    canvas.style.pointerEvents='none';
+    canvas.style.pointerEvents = 'none';
   }
 }
 
@@ -291,8 +267,7 @@ function checkClear() {
   ctx.beginPath(); ctx.moveTo(p.x, p.y);
 }));
 ['mousemove','touchmove'].forEach(evt => canvas.addEventListener(evt, e => {
-  if (!drawing) return;
-  const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
+  if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
 }));
 ['mouseup','mouseleave','touchend'].forEach(evt => canvas.addEventListener(evt, () => {
   stopScratchSfx(); if (drawing) checkClear(); drawing = false;
@@ -303,12 +278,11 @@ function handleReward(evt) {
   evt.preventDefault(); if (rewardTriggered) return; rewardTriggered = true;
   if (rewardBtn.textContent !== 'REWARD') return;
   playSfx('reward'); playSfx('badge');
-  ctx.globalCompositeOperation='destination-out'; ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.globalCompositeOperation = 'source-out'; ctx.clearRect(0,0,canvas.width,canvas.height);
   localStorage.setItem('lastScratchDate', todayISO);
-  const badgeId = cardToBadge[currentCard];
-  const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+  const badgeId = cardToBadge[currentCard]; const log = JSON.parse(localStorage.getItem('scratchLog') || '[]');
   if (badgeId && !log.includes(badgeId)) { log.push(badgeId); localStorage.setItem('scratchLog', JSON.stringify(log)); }
-  renderBadges(); showTab('badges'); badgeContainer.style.display='flex'; badgeAnim.goToAndPlay(0,true);
+  renderBadges(); showTab('badges'); badgeContainer.style.display = 'flex'; badgeAnim.goToAndPlay(0, true);
 }
 rewardBtn.addEventListener('touchend', handleReward, { passive: false });
 rewardBtn.addEventListener('click', handleReward);
@@ -318,9 +292,9 @@ function handleDone(evt) {
   evt.preventDefault(); if (doneTriggered) return; doneTriggered = true;
   if (doneBtn.textContent !== 'DONE') return;
   playSfx('tab');
-  ctx.globalCompositeOperation='destination-out'; ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.globalCompositeOperation = 'destination-out'; ctx.clearRect(0, 0, canvas.width, canvas.height);
   localStorage.setItem('lastScratchDate', todayISO);
-  doneBtn.style.display='none'; scratchStatus.textContent='NEXT SCRATCH TOMORROW'; scratchStatus.style.display='block';
+  doneBtn.style.display = 'none'; scratchStatus.textContent = 'NEXT SCRATCH TOMORROW'; scratchStatus.style.display = 'block';
 }
 doneBtn.addEventListener('touchend', handleDone, { passive: false });
 doneBtn.addEventListener('click', handleDone);
@@ -328,11 +302,16 @@ doneBtn.addEventListener('click', handleDone);
 // ───16) Rendu badges ─────────────────────────────────────────────
 function renderBadges() {
   const ul = document.getElementById('badges-list'); ul.innerHTML = '';
-  const SLOTS = 30, won = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+  const SLOTS = 30; const won = JSON.parse(localStorage.getItem('scratchLog') || '[]');
   for (let i = 0; i < SLOTS; i++) {
-    const li = document.createElement('li'); li.classList.add('badge-slot');
-    const num = document.createElement('span'); num.classList.add('badge-slot-number'); num.textContent = i+1; li.appendChild(num);
-    if (won[i]) { const img = document.createElement('img'); img.src = `images/${won[i]}.png`; img.alt = `Badge ${won[i]}`; li.appendChild(img); }
+    const li = document.createElement('li'); li.className = 'badge-slot';
+    const num = document.createElement('span'); num.className = 'badge-slot-number'; num.textContent = i + 1; li.appendChild(num);
+    if (won[i]) {
+      const img = document.createElement('img');
+      img.src = `images/${won[i]}.png`;
+      img.alt = `Badge ${won[i]}`;
+      li.appendChild(img);
+    }
     ul.appendChild(li);
   }
 }
@@ -342,5 +321,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(console.error);
 }
 
-// ───18) Init onglet Profil ───────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => showTab('profile'));
+// ───18) Démarrage onglet Profil après init mapping──────────────
+document.addEventListener('DOMContentLoaded', () => {
+  initCardToBadge().then(() => showTab('profile'));
+});
