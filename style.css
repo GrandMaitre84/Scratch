@@ -269,3 +269,54 @@ body::after {
 #lottie-badge {
   background: transparent !important;
 }
+/* Amélioration esthétique des cartes Profil */
+.stat-card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  color: #222;
+  background-size: cover;
+  background-position: center;
+}
+
+#card-pseudo {
+  background: linear-gradient(135deg, #ffe6f0 0%, #ffccdc 100%);
+}
+#cards-scratched-card {
+  background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+}
+#rewards-count-card {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+}
+#level-card {
+  background: linear-gradient(135deg, #fde2e2 0%, #f8c0c0 100%);
+}
+#xp-card {
+  background: linear-gradient(135deg, #ede7f6 0%, #d1c4e9 100%);
+}
+#xp-card .progress-bar {
+  background: rgba(255, 255, 255, 0.6);
+}
+/* ─── Customisation des onglets en bas ─────────────────────────── */
+.tabs {
+  background: linear-gradient(90deg, #fffaf0 0%, #ffe4e1 100%);
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+}
+
+.tab {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  font-size: 15px;
+  color: #666;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tab:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.tab.active {
+  background: #ffd1dc;
+  color: #c82333;
+  font-weight: 600;
+  border-top: 3px solid #c82333;
+}
