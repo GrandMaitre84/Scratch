@@ -33,7 +33,7 @@ html, body {
   display: block;
 }
 
-/* ─── CENTRAGE DU FORMULAIRE DANS PROFIL ───────────────────────── */
+/* CENTRAGE DU FORMULAIRE DANS PROFIL */
 #view-profile.view.active {
   display: flex;
   flex-direction: column;
@@ -73,8 +73,8 @@ html, body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;  /* centre vertical */
-  align-items: center;      /* centre horizontal */
+  justify-content: center;
+  align-items: center;
   gap: 0.75rem;
   padding: 1rem;
 }
@@ -116,7 +116,7 @@ html, body {
   background: #C82333;
 }
 
-/* PLAY (Scratch) */
+/* PLAY */
 #view-play.view.active {
   display: flex;
   flex-direction: column;
@@ -209,25 +209,7 @@ html, body {
   object-fit: contain;
 }
 
-/* ─── Onglet “JEU DOODLEJUMP” ─────────────────────────────────── */
-#view-game.view.active {
-  display: flex;
-  flex-direction: column;
-  padding: 1rem;
-}
-#view-game h2 {
-  text-align: center;
-  margin-bottom: 1rem;
-  font-size: 1.25rem;
-}
-/* L’iframe prend tout l’espace disponible */
-#view-game #game-frame {
-  flex: 1;
-  width: 100%;
-  border: none;
-}
-
-/* onglets en bas – plein bord bas de l’écran */
+/* onglets en bas */
 .tabs {
   position: fixed;
   left: 0;
@@ -257,7 +239,7 @@ html, body {
   font-weight: bold;
 }
 
-/* safe-area bottom */
+/* safe‐area bottom */
 body::after {
   content: "";
   position: fixed;
@@ -268,6 +250,3 @@ body::after {
   background: #FFD1DC;
   z-index: 50;
 }
-
-/* ─── Styles additionnels (dégradés, ombres, etc.) ───────────────── */
- /* Conserve ici toutes tes règles existantes (cartes profil, barres, couleurs…) */
