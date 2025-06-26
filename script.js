@@ -107,9 +107,11 @@ const currentCard = cards[daysElapsed % cards.length];
 const tabProfile   = document.getElementById('tab-profile');
 const tabPlay      = document.getElementById('tab-play');
 const tabBadges    = document.getElementById('tab-badges');
+const tabGame      = document.getElementById('tab-game');      // NEW
 const viewProfile  = document.getElementById('view-profile');
 const viewPlay     = document.getElementById('view-play');
 const viewBadges   = document.getElementById('view-badges');
+const viewGame     = document.getElementById('view-game');     // NEW
 const resetBtn     = document.getElementById('reset-btn');
 const area         = document.getElementById('scratch-area');
 const canvas       = document.getElementById('scratchCanvas');
@@ -189,33 +191,42 @@ function updateXPDisplay() {
   xpText.textContent = `${rem}/100`;
 }
 
-// ─── 7) Onglets ─────────────────────────────────────────────────
+// ─── 7) Onglets (avec switch SÛR) ───────────────────────────────
 function showTab(tab) {
-  [viewProfile, viewPlay, viewBadges].forEach(v => v.classList.remove('active'));
-  [tabProfile, tabPlay, tabBadges].forEach(b => b.classList.remove('active'));
+  // Désactive toutes les vues/onglets
+  [viewProfile, viewPlay, viewBadges, viewGame].forEach(v => v.classList.remove('active'));
+  [tabProfile, tabPlay, tabBadges, tabGame].forEach(b => b.classList.remove('active'));
   playSfx('tab');
-  if (tab === 'profile') {
-    viewProfile.classList.add('active');
-    tabProfile.classList.add('active');
-    checkPseudo();
-    updateXPDisplay();
-    updateProfileStats();
-  }
-  if (tab === 'play') {
-    viewPlay.classList.add('active');
-    tabPlay.classList.add('active');
-    scratchImage.src = `images/${currentCard}.png`;
-    checkDailyScratch();
-  }
-  if (tab === 'badges') {
-    viewBadges.classList.add('active');
-    tabBadges.classList.add('active');
-    renderBadges();
+  switch (tab) {
+    case 'profile':
+      viewProfile.classList.add('active');
+      tabProfile.classList.add('active');
+      checkPseudo();
+      updateXPDisplay();
+      updateProfileStats();
+      break;
+    case 'play':
+      viewPlay.classList.add('active');
+      tabPlay.classList.add('active');
+      scratchImage.src = `images/${currentCard}.png`;
+      checkDailyScratch();
+      break;
+    case 'badges':
+      viewBadges.classList.add('active');
+      tabBadges.classList.add('active');
+      renderBadges();
+      break;
+    case 'game':
+      viewGame.classList.add('active');
+      tabGame.classList.add('active');
+      // Rien à initialiser, l’iframe gère tout
+      break;
   }
 }
 tabProfile.addEventListener('click', () => showTab('profile'));
 tabPlay.addEventListener('click', () => showTab('play'));
 tabBadges.addEventListener('click', () => showTab('badges'));
+tabGame.addEventListener('click', () => showTab('game'));
 
 // ─── 8) Reset ────────────────────────────────────────────────────
 resetBtn.addEventListener('click', () => {
