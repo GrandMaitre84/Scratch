@@ -5,11 +5,13 @@ document.body.addEventListener('touchstart', () => {
 }, { once: true });
 
 const SFX_FILES = {
-  tab:      'sounds/tab-click.mp3',
-  validate: 'sounds/validate.mp3',
-  scratch:  'sounds/scratch.mp3',
-  reward:   'sounds/reward.mp3',
-  badge:    'sounds/badge.mp3'
+  tab:         'sounds/tab-click.mp3',
+  validate:    'sounds/validate.mp3',
+  scratch:     'sounds/scratch.mp3',
+  reward:      'sounds/reward.mp3',
+  badge:       'sounds/badge.mp3',
+  taskDone:    'sounds/task-done.mp3',
+  createTask:  'sounds/create-task.mp3'
 };
 const sfxBuffers = {};
 async function loadSfx(name, url) {
@@ -47,43 +49,42 @@ function stopScratchSfx() {
   scratchSource = null;
 }
 
-// ─── 0) Intro Lottie ────────────────────────────────────────────
-const introContainer = document.getElementById('lottie-intro');
+// ─── Lottie animations ────────────────────────────────────────────
 const introAnim = lottie.loadAnimation({
-  container: introContainer,
-  renderer: 'svg',
-  loop: false,
-  autoplay: true,
+  container: document.getElementById('lottie-intro'),
+  renderer: 'svg', loop: false, autoplay: true,
   path: 'animations/intro.json'
 });
 introAnim.addEventListener('complete', () => {
-  introContainer.style.display = 'none';
+  document.getElementById('lottie-intro').style.display = 'none';
 });
 
-// ─── Badge Lottie ───────────────────────────────────────────────
-const badgeContainer = document.getElementById('lottie-badge');
 const badgeAnim = lottie.loadAnimation({
-  container: badgeContainer,
-  renderer: 'svg',
-  loop: false,
-  autoplay: false,
+  container: document.getElementById('lottie-badge'),
+  renderer: 'svg', loop: false, autoplay: false,
   path: 'animations/badge.json'
 });
 badgeAnim.setSpeed(2);
 badgeAnim.addEventListener('complete', () => {
-  badgeContainer.style.display = 'none';
+  document.getElementById('lottie-badge').style.display = 'none';
 });
 
-// ─── 1) Cartes & cartes dynamiques ─────────────────────────────
-const cards = [
-  'card1','card2','card3','card4','card5',
-  'card6','card7','card8','card9','card10'
-];
-const cardToBadge = {};
+const taskDoneContainer = document.getElementById('lottie-task-done');
+const taskDoneAnim = lottie.loadAnimation({
+  container: taskDoneContainer,
+  renderer: 'svg', loop: false, autoplay: false,
+  path: 'animations/task-done.json'
+});
+taskDoneAnim.addEventListener('complete', () => {
+  taskDoneContainer.style.display = 'none';
+});
 
+// ─── Cartes & badges dynamiques ─────────────────────────────────
+const cards = ['card1','card2','card3','card4','card5','card6','card7','card8','card9','card10'];
+const cardToBadge = {};
 async function initCardToBadge() {
   await Promise.all(cards.map(async card => {
-    const badgeId = card.replace('card', 'badge');
+    const badgeId = card.replace('card','badge');
     try {
       const resp = await fetch(`images/${badgeId}.png`, { method: 'HEAD' });
       cardToBadge[card] = resp.ok ? badgeId : null;
@@ -93,7 +94,7 @@ async function initCardToBadge() {
   }));
 }
 
-// ─── 2) Carte du jour ───────────────────────────────────────────
+// ─── Carte du jour ─────────────────────────────────────────────
 let startDate = localStorage.getItem('startDate');
 const todayISO = new Date().toISOString().slice(0,10);
 if (!startDate) {
@@ -103,63 +104,68 @@ if (!startDate) {
 const daysElapsed = Math.floor((new Date(todayISO) - new Date(startDate)) / 86400000);
 const currentCard = cards[daysElapsed % cards.length];
 
-// ─── 3) DOM Elements ─────────────────────────────────────────────
+// ─── DOM Elements ───────────────────────────────────────────────
 const tabProfile   = document.getElementById('tab-profile');
 const tabPlay      = document.getElementById('tab-play');
 const tabBadges    = document.getElementById('tab-badges');
-const tabGame      = document.getElementById('tab-game');      // NEW
+const tabTodo      = document.getElementById('tab-todo');
+const tabGame      = document.getElementById('tab-game');
+
 const viewProfile  = document.getElementById('view-profile');
 const viewPlay     = document.getElementById('view-play');
 const viewBadges   = document.getElementById('view-badges');
-const viewGame     = document.getElementById('view-game');     // NEW
+const viewTodo     = document.getElementById('view-todo');
+const viewGame     = document.getElementById('view-game');
+
 const resetBtn     = document.getElementById('reset-btn');
-const area         = document.getElementById('scratch-area');
-const canvas       = document.getElementById('scratchCanvas');
-const ctx          = canvas.getContext('2d');
-const rewardBtn    = document.getElementById('reward-btn');
 const pseudoInput  = document.getElementById('pseudo-input');
 const pseudoBtn    = document.getElementById('pseudo-btn');
 const pseudoSpan   = document.getElementById('pseudo-display');
-const levelDisplay = document.getElementById('level-display');
-const xpBar        = document.getElementById('xp-bar');
-const xpText       = document.getElementById('xp-text');
-const scratchImage = document.getElementById('scratch-image');
 const profileForm  = document.getElementById('profile-form');
 const profileStats = document.querySelector('.profile-stats');
 const cardsDisplay = document.getElementById('cards-scratched');
 const rewardsDisplay = document.getElementById('rewards-count');
+const levelDisplay = document.getElementById('level-display');
+const xpBar        = document.getElementById('xp-bar');
+const xpText       = document.getElementById('xp-text');
+const scratchArea  = document.getElementById('scratch-area');
+const canvas       = document.getElementById('scratchCanvas');
+const ctx          = canvas.getContext('2d');
+const rewardBtn    = document.getElementById('reward-btn');
 
-// statut & Done
+// TO DO Elements
+const todoInput    = document.getElementById('todo-input');
+const todoAddBtn   = document.getElementById('todo-add-btn');
+const todoList     = document.getElementById('todo-list');
+
+// localStorage keys
+const TODOS_KEY      = 'todos';
+const TASKS_DONE_KEY = 'tasksDone';
+
+// Phaser game container
+const gameContainer = document.getElementById('game-container');
+let phaserGame = null;
+
+// Scratch status / Done button
 const scratchStatus = document.createElement('p');
 scratchStatus.id = 'scratch-status';
-Object.assign(scratchStatus.style, {
-  display: 'none', margin: '1rem auto 0', padding: '.5rem 1rem',
-  background: '#28A745', color: '#FFF', borderRadius: '4px',
-  width: '80%', maxWidth: '300px', textAlign: 'center'
-});
+Object.assign(scratchStatus.style, { display: 'none', margin: '1rem auto 0', padding: '.5rem 1rem', background: '#28A745', color: '#FFF', borderRadius: '4px', width: '80%', maxWidth: '300px', textAlign: 'center' });
 rewardBtn.insertAdjacentElement('afterend', scratchStatus);
 const doneBtn = document.createElement('button');
 doneBtn.id = 'done-btn'; doneBtn.textContent = 'DONE';
-Object.assign(doneBtn.style, {
-  display: 'none', margin: '1rem auto 0', padding: '.5rem 1rem',
-  background: '#28A745', color: '#FFF', border: 'none', borderRadius: '4px',
-  width: '80%', maxWidth: '300px', cursor: 'pointer', fontSize: '16px',
-  transition: 'background .2s ease'
-});
+Object.assign(doneBtn.style, { display: 'none', margin: '1rem auto 0', padding: '.5rem 1rem', background: '#28A745', color: '#FFF', border: 'none', borderRadius: '4px', width: '80%', maxWidth: '300px', cursor: 'pointer', fontSize: '16px' });
 doneBtn.addEventListener('mouseenter', () => doneBtn.style.background = '#218838');
 doneBtn.addEventListener('mouseleave', () => doneBtn.style.background = '#28A745');
 rewardBtn.insertAdjacentElement('afterend', doneBtn);
 
-let drawing = false;
-let rewardTriggered = false;
-let doneTriggered = false;
+let drawing = false, rewardTriggered = false, doneTriggered = false;
 
-// ─── 4) Pseudo management ────────────────────────────────────────
+// ─── Pseudo management ─────────────────────────────────────────
 function checkPseudo() {
   const stored = localStorage.getItem('pseudo');
   if (stored) {
     profileForm.style.display = 'none';
-    profileStats.style.display = 'flex';
+    profileStats.style.display = 'grid';
     pseudoSpan.textContent = stored;
   } else {
     profileForm.style.display = 'flex';
@@ -174,225 +180,216 @@ pseudoBtn.addEventListener('click', () => {
   checkPseudo();
 });
 
-// ─── 5) Stats Profil ─────────────────────────────────────────────
+// ─── Stats Profil ───────────────────────────────────────────────
 function updateProfileStats() {
-  const xpTotal = parseInt(localStorage.getItem('xpTotal') || '0', 10);
-  cardsDisplay.textContent = Math.floor(xpTotal / 20);
-  rewardsDisplay.textContent = JSON.parse(localStorage.getItem('scratchLog') || '[]').length;
+  // cartes grattées selon scratchCount, pas xpTotal
+  const scratched = parseInt(localStorage.getItem('scratchCount') || '0', 10);
+  cardsDisplay.textContent = scratched;
+  // nombre de rewards
+  const rewards = JSON.parse(localStorage.getItem('scratchLog') || '[]').length;
+  rewardsDisplay.textContent = rewards;
+  // tâches effectuées
+  const done = parseInt(localStorage.getItem(TASKS_DONE_KEY) || '0', 10);
+  document.getElementById('tasks-done-count').textContent = done;
 }
 
-// ─── 6) XP & Level display ───────────────────────────────────────
+// ─── XP & Level display ───────────────────────────────────────
 function updateXPDisplay() {
   const xpTotal = parseInt(localStorage.getItem('xpTotal') || '0', 10);
-  const level = Math.floor(xpTotal / 100);
-  const rem = xpTotal % 100;
+  const level   = Math.floor(xpTotal / 100);
+  const rem     = xpTotal % 100;
   levelDisplay.textContent = level;
-  xpBar.style.width = `${rem}%`;
-  xpText.textContent = `${rem}/100`;
+  xpBar.style.width        = `${rem}%`;
+  xpText.textContent       = `${rem}/100`;
 }
 
-// ─── 7) Onglets (avec switch SÛR) ───────────────────────────────
+// ─── Gestion des onglets ──────────────────────────────────────
 function showTab(tab) {
-  // Désactive toutes les vues/onglets
-  [viewProfile, viewPlay, viewBadges, viewGame].forEach(v => v.classList.remove('active'));
-  [tabProfile, tabPlay, tabBadges, tabGame].forEach(b => b.classList.remove('active'));
+  [viewProfile, viewPlay, viewBadges, viewTodo, viewGame].forEach(v => v.classList.remove('active'));
+  [tabProfile, tabPlay, tabBadges, tabTodo, tabGame].forEach(b => b.classList.remove('active'));
   playSfx('tab');
   switch (tab) {
     case 'profile':
-      viewProfile.classList.add('active');
-      tabProfile.classList.add('active');
-      checkPseudo();
-      updateXPDisplay();
-      updateProfileStats();
+      viewProfile.classList.add('active'); tabProfile.classList.add('active');
+      checkPseudo(); updateXPDisplay(); updateProfileStats();
       break;
     case 'play':
-      viewPlay.classList.add('active');
-      tabPlay.classList.add('active');
-      scratchImage.src = `images/${currentCard}.png`;
+      viewPlay.classList.add('active'); tabPlay.classList.add('active');
+      document.getElementById('scratch-image').src = `images/${currentCard}.png`;
       checkDailyScratch();
       break;
     case 'badges':
-      viewBadges.classList.add('active');
-      tabBadges.classList.add('active');
+      viewBadges.classList.add('active'); tabBadges.classList.add('active');
       renderBadges();
       break;
+    case 'todo':
+      viewTodo.classList.add('active'); tabTodo.classList.add('active');
+      renderTodos();
+      break;
     case 'game':
-      viewGame.classList.add('active');
-      tabGame.classList.add('active');
-      // Rien à initialiser, l’iframe gère tout
+      viewGame.classList.add('active'); tabGame.classList.add('active');
+      if (!phaserGame) setTimeout(launchPhaserGame, 300);
       break;
   }
 }
 tabProfile.addEventListener('click', () => showTab('profile'));
 tabPlay.addEventListener('click', () => showTab('play'));
 tabBadges.addEventListener('click', () => showTab('badges'));
+tabTodo.addEventListener('click', () => showTab('todo'));
 tabGame.addEventListener('click', () => showTab('game'));
 
-// ─── 8) Reset ────────────────────────────────────────────────────
+// ─── Reset ────────────────────────────────────────────────────
 resetBtn.addEventListener('click', () => {
-  ['scratchLog','lastScratchDate','xpTotal','pseudo','scratchCount']
+  ['scratchLog','lastScratchDate','xpTotal','pseudo','scratchCount',TASKS_DONE_KEY]
     .forEach(k => localStorage.removeItem(k));
   checkPseudo();
   showTab('profile');
 });
 
-// ─── 9) Canvas init ──────────────────────────────────────────────
+// ─── Initialisation du canvas scratch ─────────────────────────
 function initScratch() {
-  const w = area.clientWidth, h = area.clientHeight;
+  const w = scratchArea.clientWidth, h = scratchArea.clientHeight;
   canvas.width = w; canvas.height = h;
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = '#999';
+  ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#999';
   ctx.fillRect(0, 0, w, h);
   ctx.globalCompositeOperation = 'destination-out';
-  ctx.lineWidth = 30;
-  ctx.lineCap = 'round';
+  ctx.lineWidth = 30; ctx.lineCap = 'round';
 }
 window.addEventListener('resize', initScratch);
 
-// ───10) Position curseur ─────────────────────────────────────────
+// ─── Position du curseur ─────────────────────────────────────
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
-  return {
-    x: (e.touches ? e.touches[0].clientX : e.clientX) - r.left,
-    y: (e.touches ? e.touches[0].clientY : e.clientY) - r.top
-  };
+  return { x: (e.touches ? e.touches[0].clientX : e.clientX) - r.left,
+           y: (e.touches ? e.touches[0].clientY : e.clientY) - r.top };
 }
 
-// ───11) Limite 1 scratch/jour ────────────────────────────────────
+// ─── Limite 1 scratch/jour ────────────────────────────────────
 function checkDailyScratch() {
   const last = localStorage.getItem('lastScratchDate');
   if (last === todayISO) {
-    canvas.style.pointerEvents = 'none';
-    canvas.style.opacity = '0.5';
-    rewardBtn.style.display = 'none';
-    doneBtn.style.display = 'none';
-    scratchStatus.textContent = 'NEXT SCRATCH TOMORROW';
-    scratchStatus.style.display = 'block';
+    canvas.style.pointerEvents = 'none'; canvas.style.opacity = '0.5';
+    rewardBtn.style.display = 'none'; doneBtn.style.display = 'none';
+    scratchStatus.textContent = 'NEXT SCRATCH TOMORROW'; scratchStatus.style.display = 'block';
   } else {
-    initScratch();
-    canvas.style.pointerEvents = 'auto';
-    canvas.style.opacity = '1';
-    rewardBtn.style.display = 'none';
-    doneBtn.style.display = 'none';
-    scratchStatus.style.display = 'none';
+    initScratch(); canvas.style.pointerEvents = 'auto'; canvas.style.opacity = '1';
+    rewardBtn.style.display = 'none'; doneBtn.style.display = 'none'; scratchStatus.style.display = 'none';
   }
 }
 
-// ───12) Vérif 70% ────────────────────────────────────────────────
+// ─── Vérification 70% ─────────────────────────────────────────
 function checkClear() {
   const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
   let cleared = 0;
   for (let i = 3; i < data.length; i += 4) if (data[i] === 0) cleared++;
   if (cleared / (canvas.width * canvas.height) * 100 >= 70) {
-    const cnt = parseInt(localStorage.getItem('scratchCount') || '0', 10) + 1;
-    localStorage.setItem('scratchCount', cnt);
+    localStorage.setItem('scratchCount', parseInt(localStorage.getItem('scratchCount')||'0',10) + 1);
     updateProfileStats();
-    const xpTotal = parseInt(localStorage.getItem('xpTotal') || '0', 10) + 20;
-    localStorage.setItem('xpTotal', xpTotal);
+    const newXp = parseInt(localStorage.getItem('xpTotal')||'0',10) + 20;
+    localStorage.setItem('xpTotal', newXp);
     updateXPDisplay();
     if (cardToBadge[currentCard]) {
-      rewardBtn.textContent = 'REWARD';
-      rewardBtn.style.display = 'block';
-      scratchStatus.style.display = 'none';
+      rewardBtn.textContent = 'REWARD'; rewardBtn.style.display = 'block';
     } else {
       doneBtn.style.display = 'block';
-      rewardBtn.style.display = 'none';
-      scratchStatus.style.display = 'none';
     }
     canvas.style.pointerEvents = 'none';
   }
 }
 
-// ───13) Grattage events ───────────────────────────────────────────
-['mousedown','touchstart'].forEach(e => canvas.addEventListener(e, ev => {
-  startScratchSfx();
-  drawing = true;
-  const p = getPos(ev);
-  ctx.beginPath();
-  ctx.moveTo(p.x, p.y);
-}));
-['mousemove','touchmove'].forEach(e => canvas.addEventListener(e, ev => {
-  if (!drawing) return;
-  const p = getPos(ev);
-  ctx.lineTo(p.x, p.y);
-  ctx.stroke();
-}));
-['mouseup','mouseleave','touchend'].forEach(e => canvas.addEventListener(e, () => {
-  stopScratchSfx();
-  if (drawing) checkClear();
-  drawing = false;
-}));
+// ─── Gestion des events scratch ───────────────────────────────
+['mousedown','touchstart'].forEach(ev => canvas.addEventListener(ev, e => { startScratchSfx(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); }));
+['mousemove','touchmove'].forEach(ev => canvas.addEventListener(ev, e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); }));
+['mouseup','mouseleave','touchend'].forEach(ev => canvas.addEventListener(ev, () => { stopScratchSfx(); if (drawing) checkClear(); drawing = false; }));
 
-// ───14) Un seul tap/clic REWARD ─────────────────────────────────
-function handleReward(evt) {
-  evt.preventDefault();
-  if (rewardTriggered) return;
-  rewardTriggered = true;
-  if (rewardBtn.textContent !== 'REWARD') return;
-  playSfx('reward');
-  playSfx('badge');
-  ctx.globalCompositeOperation = 'source-out';
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+// ─── Handler Reward & Done ────────────────────────────────────
+function handleReward(e) {
+  e.preventDefault(); if (rewardTriggered) return; rewardTriggered = true;
+  playSfx('reward'); playSfx('badge');
+  ctx.globalCompositeOperation = 'source-out'; ctx.clearRect(0,0,canvas.width,canvas.height);
   localStorage.setItem('lastScratchDate', todayISO);
-  const badgeId = cardToBadge[currentCard];
-  const log = JSON.parse(localStorage.getItem('scratchLog') || '[]');
-  if (badgeId && !log.includes(badgeId)) {
-    log.push(badgeId);
-    localStorage.setItem('scratchLog', JSON.stringify(log));
-  }
-  renderBadges();
-  showTab('badges');
-  badgeContainer.style.display = 'flex';
-  badgeAnim.goToAndPlay(0, true);
+  const badgeId = cardToBadge[currentCard]; const log = JSON.parse(localStorage.getItem('scratchLog') || '[]');
+  if (badgeId && !log.includes(badgeId)) { log.push(badgeId); localStorage.setItem('scratchLog', JSON.stringify(log)); }
+  renderBadges(); showTab('badges'); document.getElementById('lottie-badge').style.display = 'flex'; badgeAnim.goToAndPlay(0, true);
 }
-rewardBtn.addEventListener('touchend', handleReward, { passive: false });
 rewardBtn.addEventListener('click', handleReward);
+rewardBtn.addEventListener('touchend', handleReward, { passive: false });
 
-// ───15) Un seul tap/clic DONE ──────────────────────────────────
-function handleDone(evt) {
-  evt.preventDefault();
-  if (doneTriggered) return;
-  doneTriggered = true;
-  if (doneBtn.textContent !== 'DONE') return;
-  playSfx('tab');
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  localStorage.setItem('lastScratchDate', todayISO);
-  doneBtn.style.display = 'none';
-  scratchStatus.textContent = 'NEXT SCRATCH TOMORROW';
-  scratchStatus.style.display = 'block';
-}
-doneBtn.addEventListener('touchend', handleDone, { passive: false });
-doneBtn.addEventListener('click', handleDone);
+doneBtn.addEventListener('click', e => { e.preventDefault(); if (doneTriggered) return; doneTriggered = true; playSfx('tab'); ctx.globalCompositeOperation = 'destination-out'; ctx.clearRect(0,0,canvas.width,canvas.height); localStorage.setItem('lastScratchDate', todayISO); doneBtn.style.display = 'none'; scratchStatus.textContent = 'NEXT SCRATCH TOMORROW'; scratchStatus.style.display = 'block'; });
+doneBtn.addEventListener('touchend', e => e.preventDefault(), { passive: false });
 
-// ───16) Rendu badges ─────────────────────────────────────────────
+// ─── Rendu badges ─────────────────────────────────────────────
 function renderBadges() {
   const ul = document.getElementById('badges-list'); ul.innerHTML = '';
-  const SLOTS = 30;
   const won = JSON.parse(localStorage.getItem('scratchLog') || '[]');
-  for (let i = 0; i < SLOTS; i++) {
-    const li = document.createElement('li');
-    li.className = 'badge-slot';
-    const num = document.createElement('span');
-    num.className = 'badge-slot-number';
-    num.textContent = i + 1;
+  for (let i = 0; i < 30; i++) {
+    const li = document.createElement('li'); li.className = 'badge-slot';
+    const num = document.createElement('span'); num.className = 'badge-slot-number'; num.textContent = i+1;
     li.appendChild(num);
     if (won[i]) {
-      const img = document.createElement('img');
-      img.src = `images/${won[i]}.png`;
-      img.alt = `Badge ${won[i]}`;
+      const img = document.createElement('img'); img.src = `images/${won[i]}.png`; img.alt = `Badge ${won[i]}`;
       li.appendChild(img);
     }
     ul.appendChild(li);
   }
 }
 
-// ───17) Service Worker ──────────────────────────────────────────
+// ─── TO DO & Tasks done ───────────────────────────────────────
+function getTodos() { return JSON.parse(localStorage.getItem(TODOS_KEY) || '[]'); }
+function saveTodos(arr) { localStorage.setItem(TODOS_KEY, JSON.stringify(arr)); }
+function renderTodos() {
+  const items = getTodos(); todoList.innerHTML = '';
+  items.forEach((text, idx) => {
+    const li = document.createElement('li'); const span = document.createElement('span'); span.className = 'todo-text'; span.textContent = text;
+    const cb = document.createElement('input'); cb.type = 'checkbox';
+    cb.addEventListener('change', () => {
+      playSfx('taskDone'); taskDoneContainer.style.display = 'flex'; taskDoneAnim.goToAndPlay(0, true);
+      const doneCount = parseInt(localStorage.getItem(TASKS_DONE_KEY) || '0', 10) + 1;
+      localStorage.setItem(TASKS_DONE_KEY, doneCount);
+      const xpNew = parseInt(localStorage.getItem('xpTotal') || '0', 10) + 10;
+      localStorage.setItem('xpTotal', xpNew);
+      updateXPDisplay();
+      setTimeout(() => { const remaining = getTodos().filter((_, i) => i !== idx); saveTodos(remaining); renderTodos(); updateProfileStats(); }, 500);
+    });
+    li.append(span, cb); todoList.appendChild(li);
+  });
+}
+
+todoAddBtn.addEventListener('click', () => {
+  const txt = todoInput.value.trim(); if (!txt) return;
+  playSfx('createTask');
+  const arr = getTodos(); arr.unshift(txt); saveTodos(arr); todoInput.value = ''; renderTodos();
+});
+
+// ─── Service Worker & démarrage initial ─────────────────────────
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(console.error);
 }
-
-// ───18) Démarrage onglet Profil après init ───────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   initCardToBadge().then(() => showTab('profile'));
+  renderTodos();
 });
+
+// ─── Initialisation Phaser Game ────────────────────────────────
+function launchPhaserGame() {
+  if (phaserGame) return;
+  const w = gameContainer.clientWidth || window.innerWidth;
+  const h = gameContainer.clientHeight || (window.innerHeight - 64);
+  phaserGame = new Phaser.Game({
+    type: Phaser.AUTO,
+    parent: 'game-container',
+    width: w, height: h,
+    scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
+    physics: { default: 'arcade', arcade: { gravity: { y: 600 }, debug: false } },
+    scene: {
+      preload() { this.load.image('background', 'doodle/images/bg.png'); this.load.image('platform', 'doodle/images/platform.png'); this.load.image('player', 'doodle/images/player.png'); },
+      create() {
+        this.add.image(w/2, h/2, 'background').setDisplaySize(w, h);
+        this.platforms = this.physics.add.staticGroup(); for (let i=0; i<10; i++) { const x = Phaser.Math.Between(50, w-50); const y = h - i*70; this.platforms.create(x,y,'platform').setScale(0.5).refreshBody(); }
+        this.player = this.physics.add.sprite(w/2, h-150, 'player').setScale(0.5); this.player.setBounce(0.2);
+        this.physics.add.collider(this.player, this.platforms);
+      },
+      update() {}
+    }
+  });
+}

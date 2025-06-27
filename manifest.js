@@ -1,24 +1,136 @@
-{
-  "name": "Scratch Mouse",
-  "short_name": "Scratch Mouse",
-  "start_url": "./",
-  "scope": "./",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#FFD1DC",
-  "theme_color": "#28a745",
-  "icons": [
-    {
-      "src": "images/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "images/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ]
-}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Scratch Mouse</title>
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#28a745">
+
+  <!-- Favicon & PWA icon -->
+  <link rel="icon" type="image/png" sizes="192x192" href="images/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="images/icon-512.png">
+  <link rel="shortcut icon" href="images/icon-192.png" type="image/png">
+
+  <!-- Icônes iOS -->
+  <link rel="apple-touch-icon" sizes="180x180" href="images/icon-180.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="images/icon-167.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="images/icon-152.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="images/icon-120.png">
+  <meta name="apple-mobile-web-app-title" content="Scratch Mouse">
+
+  <!-- Full-screen sur mobile -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <!-- conteneur d’intro Lottie -->
+  <div id="lottie-intro"
+       style="position:fixed; top:0; left:0; width:100vw; height:100vh;
+              background:#FFD1DC; z-index:200;">
+  </div>
+
+  <!-- conteneur d’animation badge (caché par défaut) -->
+  <div id="lottie-badge"
+       style="display:none;
+              position:fixed; top:0; left:0;
+              width:100vw; height:100vh;
+              z-index:300;
+              justify-content:center;
+              align-items:center;">
+  </div>
+
+  <div class="app">
+
+    <!-- PROFIL -->
+    <div id="view-profile" class="view active">
+      <div class="profile-stats" style="display:none;">
+        <div class="stat-card full-width" id="card-pseudo">
+          <strong>Pseudo</strong>
+          <p id="pseudo-display"></p>
+        </div>
+        <div class="stat-card" id="cards-scratched-card">
+          <strong>Cards scratched</strong>
+          <p id="cards-scratched">0</p>
+        </div>
+        <div class="stat-card" id="rewards-count-card">
+          <strong>Rewards</strong>
+          <p id="rewards-count">0</p>
+        </div>
+        <div class="stat-card" id="tasks-done-card">
+          <strong>Tâches effectuées</strong>
+          <p id="tasks-done-count">0</p>
+        </div>
+        <div class="stat-card" id="level-card">
+          <strong>Level of love</strong>
+          <p id="level-display">0</p>
+        </div>
+        <div class="stat-card full-width" id="xp-card">
+          <strong>XP Progress</strong>
+          <div class="progress-bar">
+            <div class="progress-bar__fill" id="xp-bar"></div>
+          </div>
+          <p id="xp-text">0/100</p>
+        </div>
+      </div>
+      <div id="profile-form" class="center-form">
+        <input id="pseudo-input" type="text" placeholder="Entrez votre pseudo" />
+        <button id="pseudo-btn">Valider</button>
+      </div>
+      <button id="reset-btn">Réinitialiser l’app</button>
+    </div>
+
+    <!-- PLAY -->
+    <div id="view-play" class="view">
+      <h2>SCRATCH</h2>
+      <div id="scratch-area">
+        <img id="scratch-image" src="images/card1.png" alt="Carte à gratter">
+        <canvas id="scratchCanvas"></canvas>
+      </div>
+      <button id="reward-btn">REWARD</button>
+    </div>
+
+    <!-- REWARDS -->
+    <div id="view-badges" class="view">
+      <h2>MY REWARDS</h2>
+      <ul id="badges-list"></ul>
+    </div>
+
+    <!-- TO DO -->
+    <div id="view-todo" class="view">
+      <h2>TO DO</h2>
+      <div class="todo-input">
+        <input id="todo-input" type="text" placeholder="Nouvelle tâche…" />
+        <button id="todo-add-btn">Ajouter</button>
+      </div>
+      <ul id="todo-list"></ul>
+    </div>
+
+    <!-- GAME -->
+    <div id="view-game" class="view">
+      <div id="game-container"></div>
+    </div>
+
+    <!-- onglets en bas -->
+    <div class="tabs">
+      <button id="tab-profile" class="tab active">PROFIL</button>
+      <button id="tab-play"    class="tab">PLAY</button>
+      <button id="tab-badges"  class="tab">REWARDS</button>
+      <button id="tab-todo"    class="tab">TO DO</button>
+      <button id="tab-game"    class="tab">GAME</button>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/lottie-web@latest/build/player/lottie.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

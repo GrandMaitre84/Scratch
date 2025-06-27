@@ -2,7 +2,6 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8"/>
-  <!-- Empêche le zoom sur iOS lors du focus input -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Scratch Mouse</title>
 
@@ -32,25 +31,19 @@
 </head>
 <body>
   <!-- conteneur d’intro Lottie -->
-  <div id="lottie-intro"
-       style="position:fixed; top:0; left:0; width:100vw; height:100vh;
-              background:#FFD1DC; z-index:200;">
-  </div>
+  <div id="lottie-intro" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:#FFD1DC; z-index:200;"></div>
 
-  <!-- conteneur d’animation badge (caché par défaut) -->
-  <div id="lottie-badge"
-       style="display:none;
-              position:fixed; top:0; left:0;
-              width:100vw; height:100vh;
-              z-index:300;
-              justify-content:center;
-              align-items:center;">
-  </div>
+  <!-- conteneur d’animation badge (caché) -->
+  <div id="lottie-badge" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:300; justify-content:center; align-items:center;"></div>
+
+  <!-- conteneur animation tâche faite (caché) -->
+  <div id="lottie-task-done" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.5); z-index:400; justify-content:center; align-items:center;"></div>
 
   <div class="app">
 
-    <!-- PROFIL -->
+    <!-- PROFILE -->
     <div id="view-profile" class="view active">
+      <h2>PROFILE</h2>
       <div class="profile-stats" style="display:none;">
         <div class="stat-card full-width" id="card-pseudo">
           <strong>Pseudo</strong>
@@ -63,6 +56,10 @@
         <div class="stat-card" id="rewards-count-card">
           <strong>Rewards</strong>
           <p id="rewards-count">0</p>
+        </div>
+        <div class="stat-card" id="tasks-done-card">
+          <strong>Tasks completed</strong>
+          <p id="tasks-done-count">0</p>
         </div>
         <div class="stat-card" id="level-card">
           <strong>Level of love</strong>
@@ -99,34 +96,36 @@
       <ul id="badges-list"></ul>
     </div>
 
-    <!-- JEU -->
-    <div id="view-game" class="view">
-      <h2>DOODLE JUMP</h2>
-      <div style="width:100vw; height:calc(100vh - 140px); max-width:100vw;">
-        <iframe
-          id="doodlejump-frame"
-          src="https://grandmaitre84.github.io/doodlejump/"
-          width="100%"
-          height="100%"
-          style="border:none; min-height:100%; min-width:100%;"
-          allowfullscreen
-        ></iframe>
+    <!-- TO DO -->
+    <div id="view-todo" class="view">
+      <h2>TO DO</h2>
+      <div class="todo-input">
+        <input id="todo-input" type="text" placeholder="New task..." />
+        <button id="todo-add-btn">Ajouter</button>
       </div>
+      <ul id="todo-list"></ul>
+    </div>
+
+    <!-- GAME -->
+    <div id="view-game" class="view">
+      <h2>GAME</h2>
+      <div id="game-container"></div>
     </div>
 
     <!-- onglets en bas -->
     <div class="tabs">
-      <button id="tab-profile" class="tab active">PROFIL</button>
+      <button id="tab-profile" class="tab active">PROFILE</button>
       <button id="tab-play"    class="tab">PLAY</button>
       <button id="tab-badges"  class="tab">REWARDS</button>
-      <button id="tab-game"    class="tab">JEU</button>
+      <button id="tab-todo"    class="tab">TO DO</button>
+      <button id="tab-game"    class="tab">GAME</button>
     </div>
 
   </div>
 
-  <!-- Lottie-web player -->
+  <!-- Scripts -->
   <script src="https://unpkg.com/lottie-web@latest/build/player/lottie.min.js"></script>
-  <!-- Votre logique JS -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
