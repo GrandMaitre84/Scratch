@@ -68,7 +68,9 @@
         </div>
         <div class="stat-card full-width" id="xp-card">
           <strong>XP Progress</strong>
-          <div class="progress-bar"><div class="progress-bar__fill" id="xp-bar"></div></div>
+          <div class="progress-bar">
+            <div class="progress-bar__fill" id="xp-bar"></div>
+          </div>
           <p id="xp-text">0/100</p>
         </div>
       </div>
@@ -93,6 +95,11 @@
     <div id="view-badges" class="view">
       <h2>MY REWARDS</h2>
       <ul id="badges-list"></ul>
+      <div id="badges-pagination" class="pagination">
+        <button id="badges-prev" disabled>Prev</button>
+        <span id="badges-page-info">1 / 5</span>
+        <button id="badges-next">Next</button>
+      </div>
     </div>
 
     <!-- TO DO -->

@@ -4,8 +4,10 @@
   padding: 0;
   box-sizing: border-box;
 }
+
 html, body {
-  width: 100%; height: 100%;
+  width: 100%;
+  height: 100%;
   background-color: #FFD1DC;
   font-family: sans-serif;
   overflow-x: hidden;
@@ -13,27 +15,34 @@ html, body {
 
 /* container */
 .app {
-  display: flex; flex-direction: column;
-  width: 100vw; height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
   background-color: #FFD1DC;
 }
 
 /* vues */
 .view {
-  flex: 1; display: none;
-  padding: 1rem; overflow-y: auto;
+  flex: 1;
+  display: none;
+  padding: 1rem;
+  overflow-y: auto;
   position: relative;
 }
 .view.active {
   display: block;
 }
 
-/* TITRES */
+/* TITRES DES ONGLETS */
 .view h2 {
   font-family: 'Segoe UI', Tahoma, sans-serif;
-  font-size: 1.75rem; font-weight: 700;
-  text-align: center; color: #fff;
-  padding: 0.5rem 1rem; border-radius: 8px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   margin-bottom: 1rem;
 }
@@ -48,7 +57,8 @@ html, body {
 
 /* PLAY */
 #view-play.view.active {
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   background: linear-gradient(135deg, #E0F7FA 0%, #B2EBF2 100%);
 }
@@ -56,16 +66,22 @@ html, body {
   background: linear-gradient(90deg, #4FC3F7, #0288D1);
 }
 #scratch-area {
-  position: relative; width: 80vw; max-width: 400px;
+  position: relative;
+  width: 80vw;
+  max-width: 400px;
   aspect-ratio: 1125/1200;
   border: 2px solid #0288D1;
   background: #FFF;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  touch-action: none;
 }
 #scratch-area img,
 #scratchCanvas {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
 }
 #scratchCanvas {
   cursor: crosshair;
@@ -76,22 +92,25 @@ html, body {
   display: none;
   margin-top: 1rem;
   padding: 1rem 2rem;
-  width: 90%; max-width: 360px;
-  background: #28A745; color: #FFF;
-  border: none; border-radius: 4px;
-  font-size: 1.125rem; font-weight: bold;
+  width: 90%;
+  max-width: 360px;
+  background: #28A745;
+  color: #FFF;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.125rem;
+  font-weight: bold;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
-  position: relative; z-index: 5;
+  transition: background 0.2s;
+  position: relative;
+  z-index: 5;
   pointer-events: auto;
 }
 #reward-btn:hover {
   background: #218838;
-  transform: translateY(-2px);
 }
 #reward-btn:active {
   background: #1e7e34;
-  transform: translateY(0);
 }
 
 /* REWARDS */
@@ -102,21 +121,38 @@ html, body {
   background: linear-gradient(90deg, #FFB74D, #F57C00);
 }
 #badges-list {
-  display: grid; grid-template-columns: repeat(2,1fr);
-  gap: 12px; list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  /* Affiche exactement 6 emplacements (2 colonnes × 3 lignes) et ajoute un scroll si plus */
+  max-height: calc((100vw / 2) * 3 + 24px);
+  overflow-y: auto;
 }
 .badge-slot {
-  position: relative; aspect-ratio: 1/1;
-  border: 1px dashed #AAA; border-radius: 8px;
+  position: relative;
+  aspect-ratio: 1/1;
+  border: 1px dashed #AAA;
+  border-radius: 8px;
   background: rgba(255,255,255,0.2);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .badge-slot-number {
-  position: absolute; top: 4px; left: 6px;
-  font-size: 0.75rem; color: #555; font-weight: bold;
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  font-size: 0.75rem;
+  color: #555;
+  font-weight: bold;
 }
 .badge-slot img {
-  width: 80%; height: 80%; object-fit: contain;
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
 }
 
 /* TO DO */
@@ -127,23 +163,32 @@ html, body {
   background: linear-gradient(90deg, #FF8BAC, #FF5C8D);
 }
 .todo-input {
-  position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%,-50%);
-  display: flex; gap: 0.5rem;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 0.5rem;
   background: linear-gradient(135deg, rgba(255,182,193,0.8), rgba(255,105,180,0.8));
-  border-radius: 8px; padding: 1rem;
+  border-radius: 8px;
+  padding: 1rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  width: 90%; max-width: 400px;
+  width: 90%;
+  max-width: 400px;
 }
 .todo-input input {
-  flex: 1; padding: 0.75rem;
-  border: 1px solid #FFC0CB; border-radius: 4px;
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #FFC0CB;
+  border-radius: 4px;
   background: rgba(255,255,255,0.9);
 }
 .todo-input button {
   padding: 0.75rem 1rem;
-  background: #28A745; color: #FFF;
-  border: none; border-radius: 4px;
+  background: #28A745;
+  color: #FFF;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
 }
 .todo-input button:hover {
@@ -151,40 +196,58 @@ html, body {
 }
 #todo-list {
   margin: 1rem auto 0;
-  width: 100%; max-width: 600px;
-  list-style: none; padding: 0;
+  width: 100%;
+  max-width: 600px;
+  list-style: none;
+  padding: 0;
 }
 #todo-list li {
-  display: flex; align-items: center; justify-content: space-between;
-  background: #FFF; padding: 1rem; border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FFF;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  margin-bottom: 0.75rem;
 }
 
 /* PROFILE STAT CARD & FORM */
 .center-form {
-  min-height: 70vh; display: flex; flex-direction: column;
-  justify-content: center; align-items: center;
-  gap: 0.75rem; padding: 1rem;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
 }
 #profile-form input,
 #profile-form button {
-  width: 80%; max-width: 300px;
+  width: 80%;
+  max-width: 300px;
 }
 #profile-form input {
-  padding: 0.5rem; border: 1px solid #CCC;
+  padding: 0.5rem;
+  border: 1px solid #CCC;
   border-radius: 4px;
 }
 #profile-form button {
-  padding: 0.5rem 1rem; background: #007BFF;
-  color: #FFF; border: none; border-radius: 4px;
+  padding: 0.5rem 1rem;
+  background: #007BFF;
+  color: #FFF;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
 }
 #profile-form button:hover {
   background: #0069D9;
 }
 .profile-stats {
-  display: grid; grid-template-columns: repeat(2,1fr);
-  gap: 0.5rem; padding: 1rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  padding: 1rem;
 }
 #card-pseudo,
 #xp-card {
@@ -192,14 +255,19 @@ html, body {
 }
 .stat-card {
   background: rgba(40,167,69,0.1);
-  border-radius: 8px; padding: 1rem; text-align: center;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
 }
 .stat-card strong {
-  display: block; margin-bottom: 0.5rem;
-  font-size: 0.9rem; color: #28A745;
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #28A745;
 }
 .stat-card p {
-  font-size: 1.2rem; font-weight: bold;
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 #cards-scratched-card { background-color: rgba(33,150,243,0.1); }
 #rewards-count-card  { background-color: rgba(255,193,7,0.1); }
@@ -209,21 +277,30 @@ html, body {
 
 /* XP BAR */
 .progress-bar {
-  background: #EEE; border-radius: 8px;
-  width: 100%; height: 18px; margin-bottom: 0.5rem;
+  background: #EEE;
+  border-radius: 8px;
+  width: 100%;
+  height: 18px;
+  margin-bottom: 0.5rem;
   box-shadow: 0 1px 3px rgba(40,167,69,0.05);
 }
 .progress-bar__fill {
   background: linear-gradient(90deg, #28A745, #4be37a 60%, #b8ffcb 100%);
-  height: 100%; width: 0; transition: width 0.3s;
+  height: 100%;
+  width: 0;
+  transition: width 0.3s;
   border-radius: 8px 0 0 8px;
 }
 
 /* Bouton reset */
 #reset-btn {
-  padding: 0.75rem 1.5rem; background: #DC3545;
-  color: #FFF; border: none; border-radius: 4px;
-  cursor: pointer; margin: 1rem auto;
+  padding: 0.75rem 1.5rem;
+  background: #DC3545;
+  color: #FFF;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 1rem auto;
 }
 #reset-btn:hover {
   background: #C82333;
@@ -231,32 +308,52 @@ html, body {
 
 /* onglets en bas */
 .tabs {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  display: flex; background: #FFF; border-top: 2px solid #DDD;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  background: #FFF;
+  border-top: 2px solid #DDD;
   box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
+  border-radius: 0;
 }
 .tab {
-  flex: 1; display: flex; flex-direction: column;
-  justify-content: flex-start; align-items: center;
-  padding-top: 0.5rem; padding-bottom: 0.25rem;
-  height: 3.5rem; text-align: center; font-size: 1rem;
-  color: #666; cursor: pointer;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding-top: 0.5rem;
+  padding-bottom: 0.25rem;
+  height: 3.5rem;
+  text-align: center;
+  font-size: 1rem;
+  color: #666;
+  cursor: pointer;
   transition: background 0.2s, color 0.2s;
+  border-radius: 0;
   -webkit-tap-highlight-color: transparent;
   will-change: background, color;
 }
 .tab:hover {
-  background: #F0F0F0; color: #333;
+  background: #F0F0F0;
+  color: #333;
 }
 .tab.active {
-  background: #FFF; color: #0288D1;
-  font-weight: 700; border-top: 4px solid #0288D1;
+  background: #FFF;
+  color: #0288D1;
+  font-weight: 700;
+  border-top: 4px solid #0288D1;
 }
 
 /* safe-area bottom */
 body::after {
-  content: ""; position: fixed;
-  left: 0; right: 0; bottom: 0;
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
   height: env(safe-area-inset-bottom);
   background: #FFD1DC;
 }

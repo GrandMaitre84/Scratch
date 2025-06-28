@@ -68,7 +68,7 @@ if (!startDate) {
   localStorage.setItem('startDate', todayISO);
   startDate = todayISO;
 }
-const dayCount = Math.floor((new Date(todayISO) - new Date(startDate))/86400000);
+const dayCount = Math.floor((new Date(todayISO) - new Date(startDate)) / 86400000);
 const currentCard = cards[dayCount % cards.length];
 
 // ─── DOM refs ───────────────────────────────────────────────────
@@ -163,140 +163,158 @@ el.resetBtn.addEventListener('click', () => {
 
 // ─── Scratch canvas ────────────────────────────────────────────
 function initScratch() {
-  const w=el.scratchArea.clientWidth, h=el.scratchArea.clientHeight;
-  el.canvas.width=w; el.canvas.height=h;
-  el.ctx.globalCompositeOperation='source-over';
-  el.ctx.fillStyle='#999'; el.ctx.fillRect(0,0,w,h);
-  el.ctx.globalCompositeOperation='destination-out';
-  el.ctx.lineWidth=30; el.ctx.lineCap='round';
+  const w = el.scratchArea.clientWidth, h = el.scratchArea.clientHeight;
+  el.canvas.width = w; el.canvas.height = h;
+  el.ctx.globalCompositeOperation = 'source-over';
+  el.ctx.fillStyle = '#999'; el.ctx.fillRect(0,0,w,h);
+  el.ctx.globalCompositeOperation = 'destination-out';
+  el.ctx.lineWidth = 30; el.ctx.lineCap = 'round';
 }
 window.addEventListener('resize', initScratch);
+
 function getPos(e) {
-  const r=el.canvas.getBoundingClientRect();
+  const r = el.canvas.getBoundingClientRect();
   return {
     x:(e.touches?e.touches[0].clientX:e.clientX)-r.left,
     y:(e.touches?e.touches[0].clientY:e.clientY)-r.top
   };
 }
+
 function checkDaily() {
-  const last=localStorage.getItem('lastScratchDate');
-  if (last===todayISO) {
-    el.canvas.style.pointerEvents='none'; el.canvas.style.opacity='0.5';
-    el.rewardBtn.style.display='none';
+  const last = localStorage.getItem('lastScratchDate');
+  if (last === todayISO) {
+    el.canvas.style.pointerEvents = 'none';
+    el.canvas.style.opacity = '0.5';
+    el.rewardBtn.style.display = 'none';
   } else {
-    el.canvas.style.pointerEvents='auto'; el.canvas.style.opacity='1';
-    el.rewardBtn.style.display='none';
+    el.canvas.style.pointerEvents = 'auto';
+    el.canvas.style.opacity = '1';
+    el.rewardBtn.style.display = 'none';
   }
 }
-let drawing=false, rewardTriggered=false;
-['mousedown','touchstart'].forEach(ev=>
-  el.canvas.addEventListener(ev,e=>{
-    playSfx('scratch'); drawing=true;
-    const p=getPos(e); el.ctx.beginPath(); el.ctx.moveTo(p.x,p.y);
-  })
-);
-['mousemove','touchmove'].forEach(ev=>
-  el.canvas.addEventListener(ev,e=>{
-    if(!drawing) return;
-    const p=getPos(e); el.ctx.lineTo(p.x,p.y); el.ctx.stroke();
-  })
-);
-['mouseup','mouseleave','touchend'].forEach(ev=>
-  el.canvas.addEventListener(ev,()=>{
-    drawing=false;
-    const data=el.ctx.getImageData(0,0,el.canvas.width,el.canvas.height).data;
-    let cleared=0;
-    for(let i=3;i<data.length;i+=4) if(data[i]===0) cleared++;
-    if(cleared/(el.canvas.width*el.canvas.height)*100>=65) {
-      localStorage.setItem('scratchCount',parseInt(localStorage.getItem('scratchCount')||'0',10)+1);
-      updateProfileStats();
-      const xpNew=parseInt(localStorage.getItem('xpTotal')||'0',10)+20;
-      localStorage.setItem('xpTotal',xpNew);
-      updateXP();
-      el.rewardBtn.style.display='block';
-      el.rewardBtn.disabled=false;
-      rewardTriggered=false;
-      el.canvas.style.pointerEvents='none';
+
+let drawing = false, rewardTriggered = false;
+// Mouse
+['mousedown','mouseup','mousemove','mouseleave'].forEach(evt => {
+  el.canvas.addEventListener(evt, e => {
+    if (evt === 'mousedown') {
+      playSfx('scratch'); drawing = true;
+      const p = getPos(e); el.ctx.beginPath(); el.ctx.moveTo(p.x,p.y);
     }
-  })
-);
+    if (evt === 'mousemove' && drawing) {
+      const p = getPos(e); el.ctx.lineTo(p.x,p.y); el.ctx.stroke();
+    }
+    if (evt === 'mouseup' || evt === 'mouseleave') {
+      drawing = false; stopScratchSfx();
+      checkClear();
+    }
+  });
+});
+// Touch
+el.canvas.addEventListener('touchstart', e => {
+  e.preventDefault(); playSfx('scratch'); drawing = true;
+  const p = getPos(e); el.ctx.beginPath(); el.ctx.moveTo(p.x,p.y);
+}, { passive: false });
+el.canvas.addEventListener('touchmove', e => {
+  e.preventDefault(); if (!drawing) return;
+  const p = getPos(e); el.ctx.lineTo(p.x,p.y); el.ctx.stroke();
+}, { passive: false });
+el.canvas.addEventListener('touchend', e => {
+  e.preventDefault(); drawing = false; stopScratchSfx(); checkClear();
+}, { passive: false });
+
+function checkClear() {
+  const data = el.ctx.getImageData(0,0,el.canvas.width,el.canvas.height).data;
+  let cleared = 0;
+  for (let i = 3; i < data.length; i += 4) if (data[i] === 0) cleared++;
+  if (cleared / (el.canvas.width * el.canvas.height) * 100 >= 65) {
+    localStorage.setItem('scratchCount', parseInt(localStorage.getItem('scratchCount')||'0',10) + 1);
+    updateProfileStats();
+    const xpNew = parseInt(localStorage.getItem('xpTotal')||'0',10) + 20;
+    localStorage.setItem('xpTotal', xpNew);
+    updateXP();
+    el.rewardBtn.style.display = 'block';
+    el.rewardBtn.disabled = false;
+    rewardTriggered = false;
+    el.canvas.style.pointerEvents = 'none';
+  }
+}
 
 // ─── Reward handler ────────────────────────────────────────────
 function handleReward(e) {
   e.preventDefault();
   if (rewardTriggered) return;
-  rewardTriggered=true;
-  el.rewardBtn.disabled=true;
+  rewardTriggered = true;
+  el.rewardBtn.disabled = true;
   playSfx('reward'); playSfx('badge');
-  el.ctx.globalCompositeOperation='source-out';
+  el.ctx.globalCompositeOperation = 'source-out';
   el.ctx.clearRect(0,0,el.canvas.width,el.canvas.height);
-  localStorage.setItem('lastScratchDate',todayISO);
-  const log=JSON.parse(localStorage.getItem('scratchLog')||'[]');
-  const badgeId=currentCard.replace('card','badge');
-  if(!log.includes(badgeId)) log.push(badgeId);
-  localStorage.setItem('scratchLog',JSON.stringify(log));
+  localStorage.setItem('lastScratchDate', todayISO);
+  const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+  const badgeId = currentCard.replace('card','badge');
+  if (!log.includes(badgeId)) log.push(badgeId);
+  localStorage.setItem('scratchLog', JSON.stringify(log));
   renderBadges();
   showTab('badges');
-  badgeContainer.style.display='flex';
+  badgeContainer.style.display = 'flex';
   badgeAnim.goToAndPlay(0,true);
 }
-el.rewardBtn.addEventListener('click',handleReward);
-el.rewardBtn.addEventListener('touchend',handleReward,{passive:false});
+el.rewardBtn.addEventListener('click', handleReward);
+el.rewardBtn.addEventListener('touchend', handleReward, { passive: false });
 
 // ─── Badges render ─────────────────────────────────────────────
 function renderBadges() {
-  const ul=document.getElementById('badges-list');
-  ul.innerHTML='';
-  const won=JSON.parse(localStorage.getItem('scratchLog')||'[]');
-  for(let i=0;i<30;i++){
-    const li=document.createElement('li'); li.className='badge-slot';
-    const num=document.createElement('span'); num.className='badge-slot-number';
-    num.textContent=i+1; li.appendChild(num);
-    if(won[i]){
-      const img=document.createElement('img');
-      img.src=`images/${won[i]}.png`; li.appendChild(img);
+  const ul = document.getElementById('badges-list');
+  ul.innerHTML = '';
+  const won = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+  for (let i = 0; i < 30; i++) {
+    const li = document.createElement('li'); li.className = 'badge-slot';
+    const num = document.createElement('span'); num.className = 'badge-slot-number';
+    num.textContent = i+1; li.appendChild(num);
+    if (won[i]) {
+      const img = document.createElement('img');
+      img.src = `images/${won[i]}.png`; li.appendChild(img);
     }
     ul.appendChild(li);
   }
 }
 
 // ─── ToDo & task done ──────────────────────────────────────────
-function getTodos(){return JSON.parse(localStorage.getItem(TODOS_KEY)||'[]');}
-function saveTodos(a){localStorage.setItem(TODOS_KEY,JSON.stringify(a));}
-function renderTodos(){
-  el.todoList.innerHTML='';
-  getTodos().forEach((t,i)=>{
-    const li=document.createElement('li');
-    const span=document.createElement('span'); span.className='todo-text'; span.textContent=t;
-    const cb=document.createElement('input'); cb.type='checkbox';
-    cb.addEventListener('change',()=>{
+function getTodos() { return JSON.parse(localStorage.getItem(TODOS_KEY)||'[]'); }
+function saveTodos(a) { localStorage.setItem(TODOS_KEY, JSON.stringify(a)); }
+function renderTodos() {
+  el.todoList.innerHTML = '';
+  getTodos().forEach((t, i) => {
+    const li = document.createElement('li');
+    const span = document.createElement('span'); span.className = 'todo-text'; span.textContent = t;
+    const cb = document.createElement('input'); cb.type = 'checkbox';
+    cb.addEventListener('change', () => {
       playSfx('taskDone');
-      taskDoneContainer.style.display='flex'; taskDoneAnim.goToAndPlay(0,true);
-      let doneCnt=parseInt(localStorage.getItem(TASKS_KEY)||'0',10)+1;
-      localStorage.setItem(TASKS_KEY,doneCnt);
-      let xpNew=parseInt(localStorage.getItem('xpTotal')||'0',10)+10;
-      localStorage.setItem('xpTotal',xpNew);
+      taskDoneContainer.style.display = 'flex'; taskDoneAnim.goToAndPlay(0,true);
+      let doneCnt = parseInt(localStorage.getItem(TASKS_KEY)||'0',10) + 1;
+      localStorage.setItem(TASKS_KEY, doneCnt);
+      let xpNew = parseInt(localStorage.getItem('xpTotal')||'0',10) + 10;
+      localStorage.setItem('xpTotal', xpNew);
       updateXP();
-      setTimeout(()=>{
-        const rem=getTodos().filter((_,j)=>j!==i);
+      setTimeout(() => {
+        const rem = getTodos().filter((_, j) => j !== i);
         saveTodos(rem); renderTodos(); updateProfileStats();
-      },500);
+      }, 500);
     });
-    li.append(span,cb); el.todoList.appendChild(li);
+    li.append(span, cb); el.todoList.appendChild(li);
   });
 }
-el.todoAddBtn.addEventListener('click',()=>{
-  const v=el.todoIn.value.trim(); if(!v) return;
+el.todoAddBtn.addEventListener('click', () => {
+  const v = el.todoIn.value.trim(); if (!v) return;
   playSfx('createTask');
-  const arr=getTodos(); arr.unshift(v); saveTodos(arr);
-  el.todoIn.value=''; renderTodos();
+  const arr = getTodos(); arr.unshift(v); saveTodos(arr);
+  el.todoIn.value = ''; renderTodos();
 });
 
-// ─── SW & init ─────────────────────────────────────────────────
-if('serviceWorker'in navigator){
+// ─── Service Worker & init ─────────────────────────────────────
+if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(console.error);
 }
-document.addEventListener('DOMContentLoaded',()=>{
+document.addEventListener('DOMContentLoaded', () => {
   initScratch(); renderTodos(); showTab('profile');
 });
-
