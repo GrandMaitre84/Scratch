@@ -71,6 +71,10 @@
           <strong>Level of love</strong>
           <p id="level-display">0</p>
         </div>
+        <div class="stat-card full-width" id="best-score-card">
+          <strong>Best Score</strong>
+          <p id="best-score">0</p>
+        </div>
         <div class="stat-card full-width" id="xp-card">
           <strong>XP Progress</strong>
           <div class="progress-bar">
@@ -114,27 +118,35 @@
 
     <!-- GAME -->
     <div id="view-game" class="view">
+      <!-- Écran de démarrage -->
+      <div id="gameStartScreen" class="game-start-screen">
+        <button id="startGameBtn">Play</button>
+      </div>
+
       <canvas id="game"></canvas>
       <div id="gameOverScreen">
         <h1>Game Over</h1>
         <p>Score : <span id="gameOverScore">0</span></p>
         <button id="replayBtn">Replay</button>
       </div>
+
+      <!-- Collectible Jetpack -->
+      <div id="jetpack-item"></div>
     </div>
 
     <!-- onglets en bas -->
     <div class="tabs">
       <button id="tab-profile" class="tab active">
-        <img src="icons/user.png"   alt="Profil">
+        <img src="icons/user.png" alt="Profil">
       </button>
       <button id="tab-play" class="tab">
-        <img src="icons/card.png"   alt="Play">
+        <img src="icons/card.png" alt="Play">
       </button>
       <button id="tab-badges" class="tab">
         <img src="icons/trophy.png" alt="Rewards">
       </button>
       <button id="tab-todo" class="tab">
-        <img src="icons/check.png"  alt="To Do">
+        <img src="icons/check.png" alt="To Do">
       </button>
       <button id="tab-game" class="tab">
         <img src="icons/gamepad.png" alt="Game">

@@ -11,7 +11,9 @@ const SFX_FILES = {
   reward:     'sounds/reward.mp3',
   badge:      'sounds/badge.mp3',
   taskDone:   'sounds/task-done.mp3',
-  createTask: 'sounds/create-task.mp3'
+  createTask: 'sounds/create-task.mp3',
+  jump:       'sounds/jump.wav',
+  yellow:     'sounds/yellow_platform.mp3'
 };
 const sfxBuffers = {};
 async function loadSfx(name, url) {
@@ -23,7 +25,7 @@ async function loadSfx(name, url) {
     console.warn(`Erreur chargement SFX ${name}:`, e);
   }
 }
-Promise.all(Object.entries(SFX_FILES).map(([n, u]) => loadSfx(n, u)));
+Promise.all(Object.entries(SFX_FILES).map(([n,u]) => loadSfx(n,u)));
 function playSfx(name) {
   const buf = sfxBuffers[name];
   if (!buf) return;
@@ -79,9 +81,9 @@ taskDoneAnim.addEventListener('complete', () => {
 });
 
 // ─── Daily card logic ───────────────────────────────────────────
-const cards = Array.from({ length: 10 }, (_, i) => `card${i + 1}`);
+const cards = Array.from({ length: 10 }, (_, i) => `card${i+1}`);
 let startDate = localStorage.getItem('startDate');
-const todayISO = new Date().toISOString().slice(0, 10);
+const todayISO = new Date().toISOString().slice(0,10);
 if (!startDate) {
   localStorage.setItem('startDate', todayISO);
   startDate = todayISO;
@@ -90,19 +92,19 @@ const daysElapsed = Math.floor((new Date(todayISO) - new Date(startDate)) / 8640
 const currentCard = cards[daysElapsed % cards.length];
 
 // ─── DOM refs ───────────────────────────────────────────────────
-const tabs = {
+const tabs      = {
   profile: document.getElementById('tab-profile'),
   play:    document.getElementById('tab-play'),
   badges:  document.getElementById('tab-badges'),
   todo:    document.getElementById('tab-todo'),
-  game:    document.getElementById('tab-game'),
+  game:    document.getElementById('tab-game')
 };
-const views = {
+const views     = {
   profile: document.getElementById('view-profile'),
   play:    document.getElementById('view-play'),
   badges:  document.getElementById('view-badges'),
   todo:    document.getElementById('view-todo'),
-  game:    document.getElementById('view-game'),
+  game:    document.getElementById('view-game')
 };
 const resetBtn    = document.getElementById('reset-btn');
 const pseudoIn    = document.getElementById('pseudo-input');
@@ -116,6 +118,7 @@ const tasksCount  = document.getElementById('tasks-done-count');
 const levelDisp   = document.getElementById('level-display');
 const xpBar       = document.getElementById('xp-bar');
 const xpText      = document.getElementById('xp-text');
+const bestScoreP  = document.getElementById('best-score');
 
 const scratchImg  = document.getElementById('scratch-image');
 const scratchArea = document.getElementById('scratch-area');
@@ -127,6 +130,13 @@ const badgesList  = document.getElementById('badges-list');
 const todoIn      = document.getElementById('todo-input');
 const todoAddBtn  = document.getElementById('todo-add-btn');
 const todoList    = document.getElementById('todo-list');
+
+const startScreen = document.getElementById('gameStartScreen');
+const startBtn    = document.getElementById('startGameBtn');
+const jetpackItem = document.getElementById('jetpack-item');
+jetpackItem.style.display = 'none';
+
+let jetpackCollected = false;
 
 // scratch status
 const scratchStatus = document.createElement('p');
@@ -165,19 +175,22 @@ pseudoBtn.addEventListener('click', () => {
   checkPseudo();
 });
 
-// ─── Profile stats & XP ────────────────────────────────────────
+// ─── Profile stats, XP & Best Score ─────────────────────────────
 function updateProfileStats() {
-  cardsCount.textContent   = parseInt(localStorage.getItem('scratchCount') || '0', 10);
-  rewardsCount.textContent = JSON.parse(localStorage.getItem('scratchLog') || '[]').length;
-  tasksCount.textContent   = parseInt(localStorage.getItem('tasksDone') || '0', 10);
+  cardsCount.textContent   = parseInt(localStorage.getItem('scratchCount')||'0',10);
+  rewardsCount.textContent = JSON.parse(localStorage.getItem('scratchLog')||'[]').length;
+  tasksCount.textContent   = parseInt(localStorage.getItem('tasksDone')||'0',10);
 }
 function updateXP() {
-  const xp = parseInt(localStorage.getItem('xpTotal') || '0', 10);
-  const lvl = Math.floor(xp / 100);
-  const rem = xp % 100;
+  const xp = parseInt(localStorage.getItem('xpTotal')||'0',10);
+  const lvl = Math.floor(xp/100), rem = xp%100;
   levelDisp.textContent = lvl;
   xpBar.style.width     = `${rem}%`;
   xpText.textContent    = `${rem}/100`;
+}
+function updateBestScore() {
+  const best = parseInt(localStorage.getItem('bestScore')||'0',10);
+  bestScoreP.textContent = best;
 }
 
 // ─── launch Doodle Jump Clone ───────────────────────────────────
@@ -185,94 +198,124 @@ let doodleStarted = false;
 function launchDoodle() {
   if (doodleStarted) return;
   doodleStarted = true;
+
+  // ─── Préparation du jetpack animé ──────────────────────────
+  const jetpackImg = new Image();
+  jetpackImg.src   = 'assets/jetpack.png';
+  jetpackImg.onload = () => console.log('✅ jetpack chargé');
+  jetpackImg.onerror = () => console.error('❌ jetpack introuvable');
+
+  const frameWidth  = 48;
+  const frameHeight = 64;
+  const totalFrames = 12;
+  const columns     = 4;
+
+  let flameFrame  = 0;
+  let frameCount  = 0;
+
+
   (function(){
     const canvasDJ = document.getElementById('game'),
           ctxDJ    = canvasDJ.getContext('2d'),
-          DPR      = window.devicePixelRatio || 1;
+          DPR      = window.devicePixelRatio||1;
     function resizeDJ(){
-      canvasDJ.width  = innerWidth * DPR;
-      canvasDJ.height = innerHeight * DPR;
-      canvasDJ.style.width  = innerWidth + 'px';
-      canvasDJ.style.height = innerHeight + 'px';
+      canvasDJ.width  = innerWidth*DPR;
+      canvasDJ.height = innerHeight*DPR;
+      canvasDJ.style.width  = innerWidth+'px';
+      canvasDJ.style.height = innerHeight+'px';
       ctxDJ.setTransform(DPR,0,0,DPR,0,0);
     }
     window.addEventListener('resize', resizeDJ);
     resizeDJ();
 
-    const GRAVITY    = 2000, JUMP_SPEED = 800, H_SPEED = 300,
-          P_W = 80, P_H = 12;
-    const maxJumpH = JUMP_SPEED*JUMP_SPEED/(2*GRAVITY) - 20,
+    const GRAVITY=2000, JUMP_SPEED=800, H_SPEED=300,
+          P_W=80, P_H=12;
+    const maxJumpH = JUMP_SPEED*JUMP_SPEED/(2*GRAVITY)-20,
           airtime  = 2*JUMP_SPEED/GRAVITY,
-          maxHorz  = H_SPEED * airtime * 0.9;
-    const backgrounds = ['#87ceeb','#ffdead','#90ee90','#add8e6'];
-    const imgR = new Image(); imgR.src = 'assets/player_right.png';
-    const imgL = new Image(); imgL.src = 'assets/player_left.png';
+          maxHorz  = H_SPEED*airtime*0.9;
+    const backgrounds=['#87ceeb','#ffdead','#90ee90','#add8e6'];
+    const imgR=new Image(); imgR.src='assets/player_right.png';
+    const imgL=new Image(); imgL.src='assets/player_left.png';
 
-    const player = { x:0, y:0, w:40, h:40, vx:0, vy:0, facing:'right' };
-    function placePlayer(px, py){
+    const player={x:0,y:0,w:40,h:40,vx:0,vy:0,facing:'right'};
+    function placePlayer(px,py){
       player.x = px + (P_W-player.w)/2;
       player.y = py - player.h;
       player.vy = -JUMP_SPEED;
     }
 
-    let platforms = [], poolPlat = [];
-    function makePlat(x,y,type=1){
-      const p = poolPlat.pop() || { x:0,y:0,w:P_W,h:P_H,type:1,vx:0 };
-      p.x = x; p.y = y; p.type = type;
-      p.vx = type===3
-        ? (Math.random()<.5?-H_SPEED*0.5:H_SPEED*0.5)
-        : 0;
+    let platforms=[], poolPlat=[];
+    function makePlat(x, y, type = 1) {
+      const p = poolPlat.pop() || { x: 0, y: 0, w: P_W, h: P_H, type: 1, vx: 0 };
+      p.x = x;
+      p.y = y;
+      p.type = type;
+      p.vx = (type === 3) ? (Math.random() < 0.5 ? -H_SPEED * 0.5 : H_SPEED * 0.5) : 0;
       return p;
     }
+
     function recycle(i){ poolPlat.push(platforms[i]); platforms.splice(i,1); }
-    function initPlatforms(){
-      platforms = []; poolPlat = [];
-      const startY = innerHeight - P_H,
-            startX = innerWidth/2 - P_W/2;
-      platforms.push(makePlat(startX,startY,1));
-      placePlayer(startX,startY);
+    function initPlatforms() {
+      platforms = [];
+      poolPlat = [];
+
+      const startY = innerHeight - P_H;
+      const startX = innerWidth / 2 - P_W / 2;
+
+      // Plateforme de départ fixe
+      platforms.push(makePlat(startX, startY, 1));
+      placePlayer(startX, startY);
+
       let y = startY - maxJumpH;
-      while(y > -innerHeight){
-        const prev = platforms[platforms.length-1];
-        let r = Math.random(), type = 1;
-        if(r<0.15) type = 2;
-        else if(r<0.35) type = 3;
-        let nx = prev.x + (Math.random()*2-1)*maxHorz;
-        nx = Math.max(0, Math.min(innerWidth-P_W, nx));
-        platforms.push(makePlat(nx,y,type));
+
+      while (y > -innerHeight) {
+        const prev = platforms[platforms.length - 1];
+        let r = Math.random();
+        let type = 1;
+
+        if (r < 0.15 && score > 1000) {
+          type = 2; // jaune rebondissante à partir de 1000 points
+        } else if (r < 0.35 && score > 2000) {
+          type = 3; // bleue mouvante à partir de 2000 points
+        }
+
+        let nx = prev.x + (Math.random() * 2 - 1) * maxHorz;
+        nx = Math.max(0, Math.min(innerWidth - P_W, nx));
+
+        platforms.push(makePlat(nx, y, type));
         y -= maxJumpH;
       }
     }
 
+
+
     let left=false, right=false;
-    window.addEventListener('keydown',e=>{
+    window.addEventListener('keydown', e=>{
       if(e.key==='ArrowLeft')  left=true;
       if(e.key==='ArrowRight') right=true;
     });
-    window.addEventListener('keyup',e=>{
+    window.addEventListener('keyup', e=>{
       if(e.key==='ArrowLeft')  left=false;
       if(e.key==='ArrowRight') right=false;
     });
-    canvasDJ.addEventListener('touchstart',e=>{
-      const tx = e.touches[0].clientX;
-      left  = tx < innerWidth/2;
-      right = tx > innerWidth/2;
+    canvasDJ.addEventListener('touchstart', e=>{
+      const tx=e.touches[0].clientX;
+      left = tx<innerWidth/2;
+      right= tx>innerWidth/2;
     });
-    canvasDJ.addEventListener('touchend',()=> left=right=false);
+    canvasDJ.addEventListener('touchend', ()=> left=right=false);
 
-    const goScreen = document.getElementById('gameOverScreen'),
-          goScore  = document.getElementById('gameOverScore'),
-          replay   = document.getElementById('replayBtn');
+    const goScreen= document.getElementById('gameOverScreen'),
+          goScore = document.getElementById('gameOverScore'),
+          replay  = document.getElementById('replayBtn');
     function showGameOver(s){
+      const prevBest = parseInt(localStorage.getItem('bestScore')||'0',10);
+      if(Math.floor(s)>prevBest) localStorage.setItem('bestScore', Math.floor(s).toString());
       goScore.textContent = Math.floor(s);
-      goScreen.style.display = 'flex';
+      goScreen.style.display='flex';
     }
-    replay.addEventListener('click',_=>{
-      score = 0;
-      initPlatforms();
-      lastTime = null;
-      goScreen.style.display = 'none';
-      requestAnimationFrame(loop);
+    replay.addEventListener('click', ()=>{
+      score=0; initPlatforms(); lastTime=null; goScreen.style.display='none'; requestAnimationFrame(loop);
     });
 
     let lastTime=null, score=0;
@@ -280,81 +323,190 @@ function launchDoodle() {
       if(lastTime===null){ lastTime=ts; return requestAnimationFrame(loop); }
       const dt=(ts-lastTime)/1000; lastTime=ts;
 
-      ctxDJ.fillStyle = backgrounds[Math.floor(score/1000)%backgrounds.length];
-      ctxDJ.fillRect(0,0,innerWidth,innerHeight);
+      // ─── Collectible Jetpack Collision ─────────────────────────
+      if (!jetpackCollected) {
+        const jx = jetpackItem.offsetLeft,
+              jy = jetpackItem.offsetTop,
+              jw = jetpackItem.offsetWidth,
+              jh = jetpackItem.offsetHeight;
 
-      player.vx = (left?-H_SPEED:0)+(right?H_SPEED:0);
-      player.x = Math.max(0, Math.min(innerWidth-player.w, player.x+player.vx*dt));
-      player.facing = player.vx>0 ? 'right' : player.vx<0 ? 'left' : player.facing;
-      player.vy += GRAVITY*dt; player.y += player.vy*dt;
+        if (
+          player.x < jx + jw && player.x + player.w > jx &&
+          player.y < jy + jh && player.y + player.h > jy
+        ) {
+          jetpackCollected = true;
+          player.hasJetpack = true;
+          jetpackItem.style.display = 'none';
+          setTimeout(() => { player.hasJetpack = false; }, 5000);
+        }
+      }
 
+      // ─── Physics ───────────────────────────────────────────────
+      player.vx = (left ? -H_SPEED : 0) + (right ? H_SPEED : 0);
+      player.x  = Math.max(0, Math.min(innerWidth - player.w, player.x + player.vx * dt));
+      
+      // Changement de sprite selon la direction
+      if (left) player.facing = 'left';
+      else if (right) player.facing = 'right';
+      
+      if (player.hasJetpack) {
+        player.vy = -JUMP_SPEED * 0.6; // Vol constant vers le haut
+      } else {
+        player.vy += GRAVITY * dt;     // Gravité normale
+      }
+
+      player.y += player.vy * dt;
+
+      // ─── Jetpack Effect (flamme animée) ────────────────────────
+      if (player.hasJetpack && jetpackImg.complete && jetpackImg.naturalWidth > 0) {
+        frameCount++;
+        if (frameCount % 4 === 0) {
+          flameFrame = (flameFrame + 1) % totalFrames;
+        }
+
+        const col = flameFrame % columns;
+        const row = Math.floor(flameFrame / columns);
+
+        ctxDJ.drawImage(
+          jetpackImg,
+          col * frameWidth, row * frameHeight,
+          frameWidth, frameHeight,
+          player.x + (player.w - frameWidth) / 2,
+          player.y + player.h - 10,
+          frameWidth, frameHeight
+        );
+      }
+
+
+
+      // ─── Scroll & Score ───────────────────────────────────────
       if(player.y < innerHeight/3){
         const dy = innerHeight/3 - player.y;
         player.y = innerHeight/3;
-        platforms.forEach(p=>p.y+=dy);
+        platforms.forEach(p=> p.y += dy);
         score += Math.floor(dy);
       }
 
-      if(player.vy > 0){
-        for(const p of platforms){
-          if(
-            player.x+player.w > p.x &&
-            player.x < p.x+p.w &&
-            player.y+player.h > p.y &&
-            player.y+player.h-player.vy*dt < p.y
-          ){
-            player.vy = p.type===2
-              ? -JUMP_SPEED * 1.8
-              : -JUMP_SPEED;
+      // ─── Collision Platforms & Jump ───────────────────────────
+      if (player.vy > 0) {
+        for (const p of platforms) {
+          const collided =
+            player.x + player.w > p.x &&
+            player.x < p.x + p.w &&
+            player.y + player.h > p.y &&
+            player.y + player.h - player.vy * dt < p.y;
+
+          if (collided) {
+            if (p.type === 2) {
+              player.vy = -JUMP_SPEED * 1.8;
+              playSfx('yellow'); // son plateforme jaune
+            } else {
+              player.vy = -JUMP_SPEED;
+              playSfx('jump'); // son normal
+            }
             break;
           }
         }
       }
 
+
+      // ─── Moving Platforms ─────────────────────────────────────
       platforms.forEach(p=>{
         if(p.type===3){
           p.x += p.vx*dt;
-          if(p.x <= 0 || p.x+p.w >= innerWidth) p.vx *= -1;
+          if(p.x<=0||p.x+p.w>=innerWidth) p.vx*=-1;
         }
       });
 
-      for(let i=platforms.length-1;i>=0;i--){
+      // ─── Cleanup & Respawn ───────────────────────────────────
+      for(let i=platforms.length-1; i>=0; i--){
         if(platforms[i].y > innerHeight) recycle(i);
       }
       while(platforms.length < 12){
         const topY = Math.min(...platforms.map(p=>p.y)),
-              prevX = platforms.find(p=>p.y===topY).x,
-              r = Math.random();
-        let type = 1;
-        if(r<0.15) type = 2;
-        else if(r<0.35) type = 3;
+              prevX= platforms.find(p=>p.y===topY).x,
+              r    = Math.random();
+        let type=1; if(r<0.15) type=2; else if(r<0.35) type=3;
         let nx = prevX + (Math.random()*2-1)*maxHorz;
         nx = Math.max(0, Math.min(innerWidth-P_W, nx));
-        platforms.push(makePlat(nx, topY - maxJumpH, type));
+        platforms.push(makePlat(nx, topY-maxJumpH, type));
       }
 
-      if(player.y > innerHeight) return showGameOver(score);
+      // ─── Game Over ───────────────────────────────────────────
+      if(player.y > innerHeight){
+        return showGameOver(score);
+      }
 
+      // ─── Draw Background ─────────────────────────────────────
+      ctxDJ.fillStyle = backgrounds[Math.floor(score/1000)%backgrounds.length];
+      ctxDJ.fillRect(0,0,innerWidth,innerHeight);
+
+      // ─── Draw Platforms ──────────────────────────────────────
       platforms.forEach(p=>{
-        if(p.type===2)      ctxDJ.fillStyle='#ffd700';
-        else if(p.type===3) ctxDJ.fillStyle='#2288ff';
-        else                ctxDJ.fillStyle='#654321';
+        ctxDJ.fillStyle = p.type===2 ? '#ffd700' :
+                          p.type===3 ? '#2288ff' : '#654321';
         ctxDJ.fillRect(p.x,p.y,p.w,p.h);
       });
 
-      const spr = player.facing==='left' ? imgL : imgR;
+      // ─── Particules ─────────────────────────────────────────
+      const particles = [];
+
+      function createJetpackParticles() {
+        for (let i = 0; i < 10; i++) { // plus de particules
+          particles.push({
+            x: player.x + player.w / 2 + (Math.random() * 8 - 4), // légère dispersion horizontale
+            y: player.y + player.h + Math.random() * 4,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: Math.random() * 1.5 + 1,
+            alpha: 1,
+            size: Math.random() * 2 + 1.5,
+          });
+        }
+      }
+
+      function updateAndDrawParticles() {
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.alpha -= 0.02; // vie plus longue
+
+          if (p.alpha <= 0) {
+            particles.splice(i, 1);
+            continue;
+          }
+
+          ctxDJ.fillStyle = `rgba(255, 140, 0, ${p.alpha})`; // orange feu
+          ctxDJ.beginPath();
+          ctxDJ.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctxDJ.fill();
+        }
+      }
+
+      // ─── Jetpack Particles Effect ───────────────────────────
+      if (player.hasJetpack) {
+        createJetpackParticles();
+      }
+      updateAndDrawParticles();
+
+      // ─── Draw Player ─────────────────────────────────────────
+      const spr = player.facing === 'left' ? imgL : imgR;
       ctxDJ.drawImage(spr, player.x, player.y, player.w, player.h);
 
-      ctxDJ.fillStyle='#000'; ctxDJ.font='20px sans-serif';
-      ctxDJ.fillText('Score: '+Math.floor(score),10,30);
 
-      requestAnimationFrame(loop);
-    }
+// ─── Draw Score ──────────────────────────────────────────
+ctxDJ.fillStyle = '#000';
+ctxDJ.font = '20px sans-serif';
+ctxDJ.fillText(`Score: ${Math.floor(score)}`, 10, 30);
 
-    initPlatforms();
-    requestAnimationFrame(loop);
-  })();
+requestAnimationFrame(loop);
 }
+
+initPlatforms();
+requestAnimationFrame(loop);
+})();
+}
+
 
 // ─── Tab navigation ────────────────────────────────────────────
 function showTab(tab) {
@@ -364,33 +516,38 @@ function showTab(tab) {
   tabs[tab].classList.add('active');
   playSfx('tab');
 
-  if (tab === 'profile') {
+  if(tab==='profile'){
     checkPseudo();
+    updateBestScore();
     updateProfileStats();
     updateXP();
   }
-  if (tab === 'play') {
+  if(tab==='play'){
     scratchImg.src = `images/${currentCard}.png`;
     checkDailyScratch();
     initScratch();
   }
-  if (tab === 'badges') {
+  if(tab==='badges'){
     renderBadges();
   }
-  if (tab === 'todo') {
+  if(tab==='todo'){
     renderTodos();
   }
-  if (tab === 'game') {
-    launchDoodle();
+  if(tab==='game'){
+    startScreen.classList.remove('hidden');
   }
 }
-Object.keys(tabs).forEach(tab => {
-  tabs[tab].addEventListener('click', () => showTab(tab));
+Object.keys(tabs).forEach(tab => tabs[tab].addEventListener('click', ()=>showTab(tab)));
+
+// ─── Start Game button ─────────────────────────────────────────
+startBtn.addEventListener('click', () => {
+  startScreen.classList.add('hidden');
+  launchDoodle();
 });
 
 // ─── Reset app ─────────────────────────────────────────────────
 resetBtn.addEventListener('click', () => {
-  ['scratchLog', 'lastScratchDate', 'xpTotal', 'pseudo', 'scratchCount', 'tasksDone']
+  ['scratchLog','lastScratchDate','xpTotal','pseudo','scratchCount','tasksDone','bestScore']
     .forEach(k => localStorage.removeItem(k));
   checkPseudo();
   showTab('profile');
@@ -403,30 +560,30 @@ function initScratch() {
   canvas.height = h;
   ctx.globalCompositeOperation = 'source-over';
   ctx.fillStyle = '#999';
-  ctx.fillRect(0, 0, w, h);
+  ctx.fillRect(0,0,w,h);
   ctx.globalCompositeOperation = 'destination-out';
   ctx.lineWidth = 30;
   ctx.lineCap   = 'round';
 }
 function checkDailyScratch() {
   const last = localStorage.getItem('lastScratchDate');
-  if (last === todayISO) {
-    canvas.style.pointerEvents = 'none';
-    canvas.style.opacity       = '0.5';
-    rewardBtn.style.display    = 'none';
-    scratchStatus.textContent  = 'NEXT SCRATCH TOMORROW';
-    scratchStatus.style.display= 'block';
+  if(last===todayISO){
+    canvas.style.pointerEvents   = 'none';
+    canvas.style.opacity         = '0.5';
+    rewardBtn.style.display      = 'none';
+    scratchStatus.textContent    = 'NEXT SCRATCH TOMORROW';
+    scratchStatus.style.display  = 'block';
   } else {
     initScratch();
-    canvas.style.pointerEvents = 'auto';
-    canvas.style.opacity       = '1';
-    rewardBtn.style.display    = 'none';
-    scratchStatus.style.display= 'none';
-    rewardTriggered = false;
+    canvas.style.pointerEvents   = 'auto';
+    canvas.style.opacity         = '1';
+    rewardBtn.style.display      = 'none';
+    scratchStatus.style.display  = 'none';
+    rewardTriggered              = false;
   }
 }
 window.addEventListener('resize', () => {
-  if (views.play.classList.contains('active')) initScratch();
+  if(views.play.classList.contains('active')) initScratch();
 });
 
 // ─── Utility to get pointer position ───────────────────────────
@@ -438,20 +595,51 @@ function getPos(e) {
   };
 }
 
+// ─── Scratch event handlers ─────────────────────────────────────
+canvas.addEventListener('mousedown', e => {
+  drawing = true; startScratchSfx();
+  const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y);
+});
+canvas.addEventListener('mousemove', e => {
+  if(!drawing) return;
+  const p = getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke();
+});
+canvas.addEventListener('mouseup', () => {
+  drawing = false; stopScratchSfx(); checkClear();
+});
+canvas.addEventListener('mouseleave', () => {
+  drawing = false; stopScratchSfx();
+});
+['touchstart','touchmove','touchend'].forEach(evt => {
+  canvas.addEventListener(evt, e => {
+    e.preventDefault();
+    if(evt==='touchstart'){
+      drawing = true; startScratchSfx();
+      const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y);
+    }
+    if(evt==='touchmove' && drawing){
+      const p = getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke();
+    }
+    if(evt==='touchend'){
+      drawing = false; stopScratchSfx(); checkClear();
+    }
+  }, { passive:false });
+});
+
 // ─── Clear detection at 65% ─────────────────────────────────────
 function checkClear() {
   const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
-  let cleared = 0;
-  for (let i = 3; i < data.length; i += 4) {
-    if (data[i] === 0) cleared++;
+  let cleared=0;
+  for(let i=3; i<data.length; i+=4){
+    if(data[i]===0) cleared++;
   }
-  if (cleared / (canvas.width * canvas.height) * 100 >= 65) {
+  if(cleared/(canvas.width*canvas.height)*100 >= 65){
     localStorage.setItem('scratchCount',
-      (parseInt(localStorage.getItem('scratchCount') || '0', 10) + 1).toString()
+      (parseInt(localStorage.getItem('scratchCount')||'0',10)+1).toString()
     );
     updateProfileStats();
-    const xpNew = parseInt(localStorage.getItem('xpTotal') || '0', 10) + 20;
-    localStorage.setItem('xpTotal', xpNew.toString());
+    const newXp = parseInt(localStorage.getItem('xpTotal')||'0',10)+20;
+    localStorage.setItem('xpTotal', newXp.toString());
     updateXP();
     rewardBtn.style.display = 'block';
     rewardBtn.disabled      = false;
@@ -460,78 +648,38 @@ function checkClear() {
   }
 }
 
-// ─── Scratch event handlers ─────────────────────────────────────
-// Mouse
-canvas.addEventListener('mousedown', e => {
-  drawing = true;
-  startScratchSfx();
-  const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y);
-});
-canvas.addEventListener('mousemove', e => {
-  if (!drawing) return;
-  const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
-});
-canvas.addEventListener('mouseup', () => {
-  drawing = false;
-  stopScratchSfx();
-  checkClear();
-});
-canvas.addEventListener('mouseleave', () => {
-  drawing = false;
-  stopScratchSfx();
-});
-
-// Touch (disable scroll)
-['touchstart','touchmove','touchend'].forEach(evt => {
-  canvas.addEventListener(evt, e => {
-    e.preventDefault();
-    if (evt === 'touchstart') {
-      drawing = true; startScratchSfx();
-      const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y);
-    }
-    if (evt === 'touchmove' && drawing) {
-      const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
-    }
-    if (evt === 'touchend') {
-      drawing = false; stopScratchSfx(); checkClear();
-    }
-  }, { passive: false });
-});
-
 // ─── Reward handler ────────────────────────────────────────────
 rewardBtn.addEventListener('click', e => {
   e.preventDefault();
-  if (rewardTriggered) return;
+  if(rewardTriggered) return;
   rewardTriggered = true;
   rewardBtn.disabled = true;
   playSfx('reward'); playSfx('badge');
   ctx.globalCompositeOperation = 'source-out';
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
   localStorage.setItem('lastScratchDate', todayISO);
   const badgeId = currentCard.replace('card','badge');
-  const log = JSON.parse(localStorage.getItem('scratchLog') || '[]');
-  if (!log.includes(badgeId)) log.push(badgeId);
+  const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+  if(!log.includes(badgeId)) log.push(badgeId);
   localStorage.setItem('scratchLog', JSON.stringify(log));
   badgeContainer.style.display = 'flex';
-  badgeAnim.goToAndPlay(0, true);
+  badgeAnim.goToAndPlay(0,true);
   showTab('badges');
 });
 
 // ─── Render badges ─────────────────────────────────────────────
 function renderBadges() {
-  badgesList.innerHTML = '';
-  const won = JSON.parse(localStorage.getItem('scratchLog') || '[]');
-  for (let i = 0; i < 30; i++) {
+  badgesList.innerHTML='';
+  const won = JSON.parse(localStorage.getItem('scratchLog')||'[]');
+  for(let i=0;i<30;i++){
     const li = document.createElement('li');
     li.className = 'badge-slot';
     const num = document.createElement('span');
-    num.className = 'badge-slot-number';
-    num.textContent = i + 1;
+    num.className='badge-slot-number'; num.textContent=i+1;
     li.appendChild(num);
-    if (won[i]) {
+    if(won[i]){
       const img = document.createElement('img');
-      img.src = `images/${won[i]}.png`;
-      img.alt = `Badge ${won[i]}`;
+      img.src=`images/${won[i]}.png`; img.alt=`Badge ${won[i]}`;
       li.appendChild(img);
     }
     badgesList.appendChild(li);
@@ -539,57 +687,46 @@ function renderBadges() {
 }
 
 // ─── ToDo & taskDone ───────────────────────────────────────────
-function getTodos() {
-  return JSON.parse(localStorage.getItem('todos') || '[]');
-}
-function saveTodos(arr) {
-  localStorage.setItem('todos', JSON.stringify(arr));
-}
-function renderTodos() {
-  todoList.innerHTML = '';
-  getTodos().forEach((text, idx) => {
+function getTodos(){ return JSON.parse(localStorage.getItem('todos')||'[]'); }
+function saveTodos(arr){ localStorage.setItem('todos', JSON.stringify(arr)); }
+function renderTodos(){
+  todoList.innerHTML='';
+  getTodos().forEach((text,idx)=>{
     const li = document.createElement('li');
-    const span = document.createElement('span');
-    span.className = 'todo-text';
-    span.textContent = text;
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.addEventListener('change', () => {
+    const span = document.createElement('span'); span.className='todo-text'; span.textContent=text;
+    const cb = document.createElement('input'); cb.type='checkbox';
+    cb.addEventListener('change',()=>{
       playSfx('taskDone');
-      taskDoneContainer.style.display = 'flex';
-      taskDoneAnim.goToAndPlay(0, true);
-      const doneCnt = parseInt(localStorage.getItem('tasksDone') || '0', 10) + 1;
+      taskDoneContainer.style.display='flex';
+      taskDoneAnim.goToAndPlay(0,true);
+      const doneCnt=parseInt(localStorage.getItem('tasksDone')||'0',10)+1;
       localStorage.setItem('tasksDone', doneCnt.toString());
-      const xpNew = parseInt(localStorage.getItem('xpTotal') || '0', 10) + 10;
+      const xpNew=parseInt(localStorage.getItem('xpTotal')||'0',10)+10;
       localStorage.setItem('xpTotal', xpNew.toString());
       updateXP();
-      setTimeout(() => {
-        const rem = getTodos().filter((_, j) => j !== idx);
+      setTimeout(()=>{
+        const rem=getTodos().filter((_,j)=>j!==idx);
         saveTodos(rem);
         renderTodos();
         updateProfileStats();
-      }, 500);
+      },500);
     });
-    li.append(span, cb);
+    li.append(span,cb);
     todoList.appendChild(li);
   });
 }
-todoAddBtn.addEventListener('click', () => {
-  const v = todoIn.value.trim();
-  if (!v) return;
+todoAddBtn.addEventListener('click',()=>{
+  const v=todoIn.value.trim(); if(!v) return;
   playSfx('createTask');
-  const arr = getTodos();
-  arr.unshift(v);
-  saveTodos(arr);
-  todoIn.value = '';
-  renderTodos();
+  const arr=getTodos(); arr.unshift(v);
+  saveTodos(arr); todoIn.value=''; renderTodos();
 });
 
 // ─── Service Worker & init ─────────────────────────────────────
-if ('serviceWorker' in navigator) {
+if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(console.error);
 }
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded',()=>{
   checkPseudo();
   initScratch();
   renderTodos();

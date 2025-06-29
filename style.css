@@ -245,6 +245,7 @@ html, body {
   padding: 1rem;
 }
 #card-pseudo,
+#best-score-card,
 #xp-card {
   grid-column: 1 / -1;
 }
@@ -302,17 +303,44 @@ html, body {
   overflow: hidden;
 }
 
+/* Overlay “Play” pour Game */
+.game-start-screen {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 11;
+}
+#gameStartScreen.hidden {
+  display: none;
+}
+#gameStartScreen button {
+  padding: 1rem 2rem;
+  font-size: 1.5rem;
+  background: #28A745;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+#gameStartScreen button:active {
+  transform: scale(.98);
+}
+
 /* Doodle Jump Clone */
 #game {
   position: absolute;
   top: 0; left: 0;
-  width: 100vw;  height: 100vh;
+  width: 100vw; height: 100vh;
   display: block;
 }
 #gameOverScreen {
   position: absolute;
   top: 0; left: 0;
-  width: 100vw;  height: 100vh;
+  width: 100vw; height: 100vh;
   background: rgba(0,0,0,0.7);
   display: none;
   align-items: center;
@@ -322,14 +350,8 @@ html, body {
   font-family: sans-serif;
   z-index: 10;
 }
-#gameOverScreen h1 {
-  margin: 0 0 1rem;
-  font-size: 2rem;
-}
-#gameOverScreen p {
-  margin: 0 0 1.5rem;
-  font-size: 1.2rem;
-}
+#gameOverScreen h1 { margin: 0 0 1rem; font-size: 2rem; }
+#gameOverScreen p  { margin: 0 0 1.5rem; font-size: 1.2rem; }
 #replayBtn {
   padding: .8rem 1.5rem;
   font-size: 1rem;
@@ -339,9 +361,24 @@ html, body {
   border-radius: 4px;
   cursor: pointer;
 }
-#replayBtn:active {
-  transform: scale(.98);
+#replayBtn:active { transform: scale(.98); }
+
+/* Collectible Jetpack (image PNG entière avec flottement) */
+#jetpack-item {
+  position: absolute;
+  left: 200px;
+  top: 300px;
+  width: 48px;
+  height: 48px;
+  background-image: url('assets/jetpack.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+
+  animation: float 2s ease-in-out infinite, glow 1.5s ease-in-out infinite;
 }
+
+
 
 /* onglets en bas — icônes */
 .tabs {
@@ -353,6 +390,7 @@ html, body {
   background: #FFF;
   border-top: 2px solid #DDD;
   box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
+  z-index: 20;
 }
 .tab {
   flex: 1;
@@ -386,4 +424,16 @@ body::after {
   bottom: 0;
   height: env(safe-area-inset-bottom);
   background: #FFD1DC;
+}
+
+@keyframes float {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-10px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes glow {
+  0%   { filter: brightness(1); }
+  50%  { filter: brightness(1.5); }
+  100% { filter: brightness(1); }
 }
