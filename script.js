@@ -94,13 +94,15 @@ const tabs = {
   profile: document.getElementById('tab-profile'),
   play:    document.getElementById('tab-play'),
   badges:  document.getElementById('tab-badges'),
-  todo:    document.getElementById('tab-todo')
+  todo:    document.getElementById('tab-todo'),
+  game:    document.getElementById('tab-game'),
 };
 const views = {
   profile: document.getElementById('view-profile'),
   play:    document.getElementById('view-play'),
   badges:  document.getElementById('view-badges'),
-  todo:    document.getElementById('view-todo')
+  todo:    document.getElementById('view-todo'),
+  game:    document.getElementById('view-game'),
 };
 const resetBtn    = document.getElementById('reset-btn');
 const pseudoIn    = document.getElementById('pseudo-input');
@@ -125,9 +127,6 @@ const badgesList  = document.getElementById('badges-list');
 const todoIn      = document.getElementById('todo-input');
 const todoAddBtn  = document.getElementById('todo-add-btn');
 const todoList    = document.getElementById('todo-list');
-
-const TODOS_KEY   = 'todos';
-const TASKS_KEY   = 'tasksDone';
 
 // scratch status
 const scratchStatus = document.createElement('p');
@@ -170,7 +169,7 @@ pseudoBtn.addEventListener('click', () => {
 function updateProfileStats() {
   cardsCount.textContent   = parseInt(localStorage.getItem('scratchCount') || '0', 10);
   rewardsCount.textContent = JSON.parse(localStorage.getItem('scratchLog') || '[]').length;
-  tasksCount.textContent   = parseInt(localStorage.getItem(TASKS_KEY) || '0', 10);
+  tasksCount.textContent   = parseInt(localStorage.getItem('tasksDone') || '0', 10);
 }
 function updateXP() {
   const xp = parseInt(localStorage.getItem('xpTotal') || '0', 10);
@@ -181,6 +180,182 @@ function updateXP() {
   xpText.textContent    = `${rem}/100`;
 }
 
+// ─── launch Doodle Jump Clone ───────────────────────────────────
+let doodleStarted = false;
+function launchDoodle() {
+  if (doodleStarted) return;
+  doodleStarted = true;
+  (function(){
+    const canvasDJ = document.getElementById('game'),
+          ctxDJ    = canvasDJ.getContext('2d'),
+          DPR      = window.devicePixelRatio || 1;
+    function resizeDJ(){
+      canvasDJ.width  = innerWidth * DPR;
+      canvasDJ.height = innerHeight * DPR;
+      canvasDJ.style.width  = innerWidth + 'px';
+      canvasDJ.style.height = innerHeight + 'px';
+      ctxDJ.setTransform(DPR,0,0,DPR,0,0);
+    }
+    window.addEventListener('resize', resizeDJ);
+    resizeDJ();
+
+    const GRAVITY    = 2000, JUMP_SPEED = 800, H_SPEED = 300,
+          P_W = 80, P_H = 12;
+    const maxJumpH = JUMP_SPEED*JUMP_SPEED/(2*GRAVITY) - 20,
+          airtime  = 2*JUMP_SPEED/GRAVITY,
+          maxHorz  = H_SPEED * airtime * 0.9;
+    const backgrounds = ['#87ceeb','#ffdead','#90ee90','#add8e6'];
+    const imgR = new Image(); imgR.src = 'assets/player_right.png';
+    const imgL = new Image(); imgL.src = 'assets/player_left.png';
+
+    const player = { x:0, y:0, w:40, h:40, vx:0, vy:0, facing:'right' };
+    function placePlayer(px, py){
+      player.x = px + (P_W-player.w)/2;
+      player.y = py - player.h;
+      player.vy = -JUMP_SPEED;
+    }
+
+    let platforms = [], poolPlat = [];
+    function makePlat(x,y,type=1){
+      const p = poolPlat.pop() || { x:0,y:0,w:P_W,h:P_H,type:1,vx:0 };
+      p.x = x; p.y = y; p.type = type;
+      p.vx = type===3
+        ? (Math.random()<.5?-H_SPEED*0.5:H_SPEED*0.5)
+        : 0;
+      return p;
+    }
+    function recycle(i){ poolPlat.push(platforms[i]); platforms.splice(i,1); }
+    function initPlatforms(){
+      platforms = []; poolPlat = [];
+      const startY = innerHeight - P_H,
+            startX = innerWidth/2 - P_W/2;
+      platforms.push(makePlat(startX,startY,1));
+      placePlayer(startX,startY);
+      let y = startY - maxJumpH;
+      while(y > -innerHeight){
+        const prev = platforms[platforms.length-1];
+        let r = Math.random(), type = 1;
+        if(r<0.15) type = 2;
+        else if(r<0.35) type = 3;
+        let nx = prev.x + (Math.random()*2-1)*maxHorz;
+        nx = Math.max(0, Math.min(innerWidth-P_W, nx));
+        platforms.push(makePlat(nx,y,type));
+        y -= maxJumpH;
+      }
+    }
+
+    let left=false, right=false;
+    window.addEventListener('keydown',e=>{
+      if(e.key==='ArrowLeft')  left=true;
+      if(e.key==='ArrowRight') right=true;
+    });
+    window.addEventListener('keyup',e=>{
+      if(e.key==='ArrowLeft')  left=false;
+      if(e.key==='ArrowRight') right=false;
+    });
+    canvasDJ.addEventListener('touchstart',e=>{
+      const tx = e.touches[0].clientX;
+      left  = tx < innerWidth/2;
+      right = tx > innerWidth/2;
+    });
+    canvasDJ.addEventListener('touchend',()=> left=right=false);
+
+    const goScreen = document.getElementById('gameOverScreen'),
+          goScore  = document.getElementById('gameOverScore'),
+          replay   = document.getElementById('replayBtn');
+    function showGameOver(s){
+      goScore.textContent = Math.floor(s);
+      goScreen.style.display = 'flex';
+    }
+    replay.addEventListener('click',_=>{
+      score = 0;
+      initPlatforms();
+      lastTime = null;
+      goScreen.style.display = 'none';
+      requestAnimationFrame(loop);
+    });
+
+    let lastTime=null, score=0;
+    function loop(ts){
+      if(lastTime===null){ lastTime=ts; return requestAnimationFrame(loop); }
+      const dt=(ts-lastTime)/1000; lastTime=ts;
+
+      ctxDJ.fillStyle = backgrounds[Math.floor(score/1000)%backgrounds.length];
+      ctxDJ.fillRect(0,0,innerWidth,innerHeight);
+
+      player.vx = (left?-H_SPEED:0)+(right?H_SPEED:0);
+      player.x = Math.max(0, Math.min(innerWidth-player.w, player.x+player.vx*dt));
+      player.facing = player.vx>0 ? 'right' : player.vx<0 ? 'left' : player.facing;
+      player.vy += GRAVITY*dt; player.y += player.vy*dt;
+
+      if(player.y < innerHeight/3){
+        const dy = innerHeight/3 - player.y;
+        player.y = innerHeight/3;
+        platforms.forEach(p=>p.y+=dy);
+        score += Math.floor(dy);
+      }
+
+      if(player.vy > 0){
+        for(const p of platforms){
+          if(
+            player.x+player.w > p.x &&
+            player.x < p.x+p.w &&
+            player.y+player.h > p.y &&
+            player.y+player.h-player.vy*dt < p.y
+          ){
+            player.vy = p.type===2
+              ? -JUMP_SPEED * 1.8
+              : -JUMP_SPEED;
+            break;
+          }
+        }
+      }
+
+      platforms.forEach(p=>{
+        if(p.type===3){
+          p.x += p.vx*dt;
+          if(p.x <= 0 || p.x+p.w >= innerWidth) p.vx *= -1;
+        }
+      });
+
+      for(let i=platforms.length-1;i>=0;i--){
+        if(platforms[i].y > innerHeight) recycle(i);
+      }
+      while(platforms.length < 12){
+        const topY = Math.min(...platforms.map(p=>p.y)),
+              prevX = platforms.find(p=>p.y===topY).x,
+              r = Math.random();
+        let type = 1;
+        if(r<0.15) type = 2;
+        else if(r<0.35) type = 3;
+        let nx = prevX + (Math.random()*2-1)*maxHorz;
+        nx = Math.max(0, Math.min(innerWidth-P_W, nx));
+        platforms.push(makePlat(nx, topY - maxJumpH, type));
+      }
+
+      if(player.y > innerHeight) return showGameOver(score);
+
+      platforms.forEach(p=>{
+        if(p.type===2)      ctxDJ.fillStyle='#ffd700';
+        else if(p.type===3) ctxDJ.fillStyle='#2288ff';
+        else                ctxDJ.fillStyle='#654321';
+        ctxDJ.fillRect(p.x,p.y,p.w,p.h);
+      });
+
+      const spr = player.facing==='left' ? imgL : imgR;
+      ctxDJ.drawImage(spr, player.x, player.y, player.w, player.h);
+
+      ctxDJ.fillStyle='#000'; ctxDJ.font='20px sans-serif';
+      ctxDJ.fillText('Score: '+Math.floor(score),10,30);
+
+      requestAnimationFrame(loop);
+    }
+
+    initPlatforms();
+    requestAnimationFrame(loop);
+  })();
+}
+
 // ─── Tab navigation ────────────────────────────────────────────
 function showTab(tab) {
   Object.values(views).forEach(v => v.classList.remove('active'));
@@ -188,6 +363,7 @@ function showTab(tab) {
   views[tab].classList.add('active');
   tabs[tab].classList.add('active');
   playSfx('tab');
+
   if (tab === 'profile') {
     checkPseudo();
     updateProfileStats();
@@ -204,6 +380,9 @@ function showTab(tab) {
   if (tab === 'todo') {
     renderTodos();
   }
+  if (tab === 'game') {
+    launchDoodle();
+  }
 }
 Object.keys(tabs).forEach(tab => {
   tabs[tab].addEventListener('click', () => showTab(tab));
@@ -211,7 +390,7 @@ Object.keys(tabs).forEach(tab => {
 
 // ─── Reset app ─────────────────────────────────────────────────
 resetBtn.addEventListener('click', () => {
-  ['scratchLog', 'lastScratchDate', 'xpTotal', 'pseudo', 'scratchCount', TASKS_KEY]
+  ['scratchLog', 'lastScratchDate', 'xpTotal', 'pseudo', 'scratchCount', 'tasksDone']
     .forEach(k => localStorage.removeItem(k));
   checkPseudo();
   showTab('profile');
@@ -336,7 +515,7 @@ rewardBtn.addEventListener('click', e => {
   badgeContainer.style.display = 'flex';
   badgeAnim.goToAndPlay(0, true);
   showTab('badges');
-}, { passive: false });
+});
 
 // ─── Render badges ─────────────────────────────────────────────
 function renderBadges() {
@@ -361,10 +540,10 @@ function renderBadges() {
 
 // ─── ToDo & taskDone ───────────────────────────────────────────
 function getTodos() {
-  return JSON.parse(localStorage.getItem(TODOS_KEY) || '[]');
+  return JSON.parse(localStorage.getItem('todos') || '[]');
 }
 function saveTodos(arr) {
-  localStorage.setItem(TODOS_KEY, JSON.stringify(arr));
+  localStorage.setItem('todos', JSON.stringify(arr));
 }
 function renderTodos() {
   todoList.innerHTML = '';
@@ -379,8 +558,8 @@ function renderTodos() {
       playSfx('taskDone');
       taskDoneContainer.style.display = 'flex';
       taskDoneAnim.goToAndPlay(0, true);
-      const doneCnt = parseInt(localStorage.getItem(TASKS_KEY) || '0', 10) + 1;
-      localStorage.setItem(TASKS_KEY, doneCnt.toString());
+      const doneCnt = parseInt(localStorage.getItem('tasksDone') || '0', 10) + 1;
+      localStorage.setItem('tasksDone', doneCnt.toString());
       const xpNew = parseInt(localStorage.getItem('xpTotal') || '0', 10) + 10;
       localStorage.setItem('xpTotal', xpNew.toString());
       updateXP();
