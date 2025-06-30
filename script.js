@@ -13,7 +13,7 @@ const SFX_FILES = {
   taskDone:   'sounds/task-done.mp3',
   createTask: 'sounds/create-task.mp3',
   jump:       'sounds/jump.wav',
-  yellow:     'sounds/yellow_platform.mp3'
+  yellow:     'sounds/yellow_platform.wav'
 };
 const sfxBuffers = {};
 async function loadSfx(name, url) {
@@ -203,6 +203,7 @@ function updateBestScore() {
   bestScoreP.textContent = best;
 }
 
+
 // ─── launch Doodle Jump Clone ───────────────────────────────────
 let doodleStarted = false;
 function launchDoodle() {
@@ -390,12 +391,26 @@ function launchDoodle() {
 
 
       // ─── Scroll & Score ───────────────────────────────────────
-      if(player.y < innerHeight/3){
+      if (player.y < innerHeight/3) {
         const dy = innerHeight/3 - player.y;
         player.y = innerHeight/3;
-        platforms.forEach(p=> p.y += dy);
+        platforms.forEach(p => p.y += dy);
         score += Math.floor(dy);
       }
+
+      // ─── Spawn du jetpack tous les 5000 pts ─────────────────────
+      if (score >= jetpackThreshold && jetpackItem.style.display !== 'block') {
+        // Choisit une plateforme au hasard
+        const plat = platforms[Math.floor(Math.random() * platforms.length)];
+        // Place le jetpack juste au-dessus de la plateforme
+        jetpackItem.style.left    = `${plat.x + (plat.w - jetpackItem.offsetWidth)/2}px`;
+        jetpackItem.style.top     = `${plat.y - jetpackItem.offsetHeight}px`;
+        jetpackItem.style.display = 'block';
+        // Prépare le prochain palier
+        jetpackThreshold += 5000;
+        jetpackCollected = false;
+      }
+
 
       // ─── Collision Platforms & Jump ───────────────────────────
       if (player.vy > 0) {
