@@ -6,7 +6,6 @@ document.body.addEventListener('touchstart', () => {
 
 const SFX_FILES = {
   tab:        'sounds/tab-click.mp3',
-  validate:   'sounds/validate.mp3',
   scratch:    'sounds/scratch.mp3',
   reward:     'sounds/reward.mp3',
   badge:      'sounds/badge.mp3',
@@ -71,6 +70,14 @@ const introAnim = lottie.loadAnimation({
 introAnim.addEventListener('complete', () => {
   document.getElementById('lottie-intro').style.display = 'none';
 });
+
+// ─── Son d'ouverture au tap sur l'icône ───────────────────────────
+const introContainer = document.getElementById('lottie-intro');
+introContainer.addEventListener('click', function onOpenTap() {
+  playSfx('openApp');
+  introContainer.removeEventListener('click', onOpenTap);
+});
+
 
 const badgeContainer = document.getElementById('lottie-badge');
 const badgeAnim = lottie.loadAnimation({
@@ -192,7 +199,6 @@ function checkPseudo() {
   }
 }
 pseudoBtn.addEventListener('click', () => {
-  playSfx('tab'); playSfx('validate');
   const v = pseudoIn.value.trim();
   if (!v) return;
   localStorage.setItem('pseudo', v);
