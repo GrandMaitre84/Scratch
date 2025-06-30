@@ -13,8 +13,7 @@ const SFX_FILES = {
   createTask: 'sounds/create-task.mp3',
   jump:       'sounds/jump.wav',
   yellow:     'sounds/yellow_platform.wav',
-  jetpack: 'sounds/jetpack1.mp3',
-  openApp: 'sounds/open_app.mp3'
+  jetpack: 'sounds/jetpack1.mp3'
 
 };
 const sfxBuffers = {};
@@ -70,14 +69,6 @@ const introAnim = lottie.loadAnimation({
 introAnim.addEventListener('complete', () => {
   document.getElementById('lottie-intro').style.display = 'none';
 });
-
-// ─── Son d'ouverture au tap sur l'icône ───────────────────────────
-const introContainer = document.getElementById('lottie-intro');
-introContainer.addEventListener('click', function onOpenTap() {
-  playSfx('openApp');
-  introContainer.removeEventListener('click', onOpenTap);
-});
-
 
 const badgeContainer = document.getElementById('lottie-badge');
 const badgeAnim = lottie.loadAnimation({
@@ -488,8 +479,8 @@ function launchDoodle() {
         p.type === 1 &&
         !jetpack &&
         Math.random() < 0.05 &&
-        score > 100 &&
-        ts - lastJetpackTime > 3000 // au moins 3 secondes depuis le dernier
+        score > 10000 &&
+        ts - lastJetpackTime > 20 // au moins 3 secondes depuis le dernier
       ) {
         jetpack = { x: p.x + P_W / 2 - 15, y: p.y - 30 };
         lastJetpackTime = ts;

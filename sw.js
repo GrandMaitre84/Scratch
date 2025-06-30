@@ -431,15 +431,35 @@ function launchPhaserGame() {
         this.load.image('platform', 'doodle/images/platform.png');
         this.load.image('player', 'doodle/images/player.png');
       },
-      create() {
-        this.add.image(width/2, height/2, 'background').setDisplaySize(width, height);
+        scene: {
+          preload() {
+            this.load.image('background', 'doodle/images/bg.png');
+            this.load.image('platform',   'doodle/images/platform.png');
+            this.load.image('player',     'doodle/images/player.png');
+          },
 
-        this.platforms = this.physics.add.staticGroup();
-        for (let i = 0; i < 10; i++) {
-          const x = Phaser.Math.Between(50, width - 50);
-          const y = height - i * 70;
-          this.platforms.create(x, y, 'platform').setScale(0.5).refreshBody();
+          create() {
+            this.add
+              .image(width/2, height/2, 'background')
+              .setDisplaySize(width, height);
+
+            this.platforms = this.physics.add.staticGroup();
+            for (let i = 0; i < 10; i++) {
+              const x = Phaser.Math.Between(50, width - 50);
+              const y = height - i * 70;
+              this.platforms
+                .create(x, y, 'platform')
+                .setScale(0.5)
+                .refreshBody();
+            }
+
+            this.player = this.physics.add
+              .sprite(width/2, height - 150, 'player')
+              .setScale(0.5);
+            this.player.setBounce(0);
+          },  // ← virgule nécessaire ici
+
+          update() {
+            // Ton code de mise à jour ici…
+          }    // pas de virgule après la dernière méthode
         }
-
-        this.player = this.physics.add.sprite(width/2, height - 150, 'player').setScale(0.5);
-        this.player.setBounce(0
