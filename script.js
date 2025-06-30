@@ -118,10 +118,11 @@ const views     = {
   todo:    document.getElementById('view-todo'),
   game:    document.getElementById('view-game')
 };
-// Onglet Game : affichage correct et resize canvas
 tabs.game.addEventListener('click', () => {
   showView('view-game');
-  resizeDJ(); // ← ajuste le canvas à l'écran, surtout sur mobile
+  setTimeout(() => {
+    resizeDJ();
+  }, 100); // Laisse le temps au DOM de rendre la vue
 });
 
 const resetBtn    = document.getElementById('reset-btn');
