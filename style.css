@@ -83,6 +83,7 @@ html, body {
   touch-action: none;
   margin-bottom: 1rem;        /* espace sous la zone */
 }
+
 #scratch-area img,
 #scratchCanvas {
   position: absolute;
@@ -91,9 +92,31 @@ html, body {
   height: 100%;
   touch-action: none;
 }
+
 #scratchCanvas {
   cursor: crosshair;
 }
+
+/* Nouveau conteneur autour du scratch + bouton */
+.scratch-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Conteneur du bouton reward : réserve toujours l’espace */
+.reward-container {
+  height: 50px;               /* réserve la place du bouton */
+  margin-top: 1rem;
+}
+
+/* Bouton REWARD */
+#reward-btn {
+  width: 120px;
+  height: 50px;
+  font-size: 1.2rem;
+}
+
 
 /* REWARD BUTTON */
 #reward-btn {

@@ -99,19 +99,26 @@
         <button id="pseudo-btn">Valider</button>
       </div>
       <button id="reset-btn">Réinitialiser l’app</button>
-      <div id="app-version">App v0.1.3</div>
+      <div id="app-version">App v0.1.4</div>
     </div>
     
 
     <!-- PLAY -->
     <div id="view-play" class="view">
       <h2>SCRATCH</h2>
-      <div id="scratch-area">
-        <img id="scratch-image" src="images/card1.png" alt="Carte à gratter">
-        <canvas id="scratchCanvas"></canvas>
+
+      <div class="scratch-wrapper">
+        <div id="scratch-area">
+          <img id="scratch-image" src="images/card1.png" alt="Carte à gratter">
+          <canvas id="scratchCanvas"></canvas>
+        </div>
+
+        <div class="reward-container">
+          <button id="reward-btn" style="display: none;">REWARD</button>
+        </div>
       </div>
-      <button id="reward-btn">REWARD</button>
     </div>
+
 
     <!-- REWARDS -->
     <div id="view-badges" class="view">

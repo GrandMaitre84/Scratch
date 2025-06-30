@@ -14,7 +14,8 @@ const SFX_FILES = {
   createTask: 'sounds/create-task.mp3',
   jump:       'sounds/jump.wav',
   yellow:     'sounds/yellow_platform.wav',
-  jetpack: 'sounds/jetpack1.mp3'
+  jetpack: 'sounds/jetpack1.mp3',
+  openApp: 'sounds/open_app.mp3'
 
 };
 const sfxBuffers = {};
@@ -36,6 +37,12 @@ function playSfx(name) {
   src.connect(audioCtx.destination);
   src.start(0);
 }
+// ─── Son d'ouverture ───────────────────────────────────────────────
+window.addEventListener('load', () => {
+  document.addEventListener('click', () => {
+    playSfx('openApp');
+  }, { once: true });
+});
 
 // scratch sound loop
 let scratchSource = null;
@@ -224,15 +231,17 @@ const JETPACK_IMG = new Image();
 JETPACK_IMG.src = 'assets/jetpack.png';
 
 let particles = [];
+let lastJetpackTime = 0;
 
 function createParticle(x, y) {
   particles.push({
     x: x,
     y: y,
-    vx: (Math.random() - 0.5) * 30,
-    vy: Math.random() * 50,
+    vx: (Math.random() - 0.5) * 10,      // Plus droit
+    vy: 100 + Math.random() * 100,       // Va plus vite vers le bas
     alpha: 1,
-    size: 6 + Math.random() * 4
+    size: 8 + Math.random() * 6,         // Plus grosses flammes
+    hue: 30 + Math.random() * 20         // Orange -> Jaune
   });
 }
 
@@ -441,6 +450,10 @@ function launchDoodle() {
     for (let i = platforms.length - 1; i >= 0; i--) {
       if (platforms[i].y > innerHeight) recycle(i);
     }
+    if (jetpack && jetpack.y > innerHeight) {
+      jetpack = null;
+    }
+
     while (platforms.length < 12) {
       const topY = Math.min(...platforms.map(p => p.y));
       const prevX = platforms.find(p => p.y === topY).x;
@@ -465,9 +478,17 @@ function launchDoodle() {
                        '#654321';
       ctxDJ.fillRect(p.x, p.y, p.w, p.h);
 
-      if (p.type === 1 && !jetpack && Math.random() < 0.009 && score > 20000) {
+      if (
+        p.type === 1 &&
+        !jetpack &&
+        Math.random() < 0.05 &&
+        score > 100 &&
+        ts - lastJetpackTime > 3000 // au moins 3 secondes depuis le dernier
+      ) {
         jetpack = { x: p.x + P_W / 2 - 15, y: p.y - 30 };
+        lastJetpackTime = ts;
       }
+
     });
 
     if (jetpack) {
@@ -485,10 +506,15 @@ function launchDoodle() {
       if (p.alpha <= 0) {
         particles.splice(i, 1);
       } else {
-        ctxDJ.fillStyle = `rgba(255, 100, 0, ${p.alpha.toFixed(2)})`;
+        const gradient = ctxDJ.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+        gradient.addColorStop(0, `hsla(${p.hue}, 100%, 60%, ${p.alpha})`);
+        gradient.addColorStop(1, `hsla(${p.hue}, 100%, 30%, 0)`);
+
+        ctxDJ.fillStyle = gradient;
         ctxDJ.beginPath();
         ctxDJ.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctxDJ.fill();
+
       }
     });
 
