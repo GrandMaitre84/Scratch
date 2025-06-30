@@ -68,6 +68,7 @@ html, body {
 /* Titre de la vue Play */
 #view-play h2 {
   background: linear-gradient(90deg, #4FC3F7, #0288D1);
+  margin-bottom: 1rem;
 }
 
 /* Zone de grattage : carré limité */
@@ -389,20 +390,8 @@ html, body {
 }
 #replayBtn:active { transform: scale(.98); }
 
-/* Collectible Jetpack (image PNG entière avec flottement) */
-#jetpack-item {
-  position: absolute;
-  left: 200px;
-  top: 300px;
-  width: 48px;
-  height: 48px;
-  background-image: url('assets/jetpack.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
 
-  animation: float 2s ease-in-out infinite, glow 1.5s ease-in-out infinite;
-}
+
 
 
 

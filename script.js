@@ -13,7 +13,9 @@ const SFX_FILES = {
   taskDone:   'sounds/task-done.mp3',
   createTask: 'sounds/create-task.mp3',
   jump:       'sounds/jump.wav',
-  yellow:     'sounds/yellow_platform.wav'
+  yellow:     'sounds/yellow_platform.wav',
+  jetpack: 'sounds/jetpack1.mp3'
+
 };
 const sfxBuffers = {};
 async function loadSfx(name, url) {
@@ -146,8 +148,6 @@ const startBtn    = document.getElementById('startGameBtn');
 const jetpackItem = document.getElementById('jetpack-item');
 jetpackItem.style.display = 'none';
 
-let jetpackCollected = false;
-
 // scratch status
 const scratchStatus = document.createElement('p');
 scratchStatus.id = 'scratch-status';
@@ -205,332 +205,295 @@ function updateBestScore() {
 
 
 // ─── launch Doodle Jump Clone ───────────────────────────────────
+const HIGH_BOUNCE = 1800;
+const MOVING_SPEED = 100;
+
 let doodleStarted = false;
+let jetpack = null;
+let jetpackActive = false;
+let jetpackTimer = 0;
+const JETPACK_DURATION = 2; // secondes
+const JETPACK_IMG = new Image();
+JETPACK_IMG.src = 'assets/jetpack.png';
+
+let particles = [];
+
+function createParticle(x, y) {
+  particles.push({
+    x: x,
+    y: y,
+    vx: (Math.random() - 0.5) * 30,
+    vy: Math.random() * 50,
+    alpha: 1,
+    size: 6 + Math.random() * 4
+  });
+}
+
 function launchDoodle() {
   if (doodleStarted) return;
   doodleStarted = true;
 
-  // ─── Préparation du jetpack animé ──────────────────────────
-  const jetpackImg = new Image();
-  jetpackImg.src   = 'assets/jetpack.png';
-  jetpackImg.onload = () => console.log('✅ jetpack chargé');
-  jetpackImg.onerror = () => console.error('❌ jetpack introuvable');
+  const canvasDJ = document.getElementById('game');
+  const ctxDJ = canvasDJ.getContext('2d');
+  const DPR = window.devicePixelRatio || 1;
 
-  const frameWidth  = 48;
-  const frameHeight = 64;
-  const totalFrames = 12;
-  const columns     = 4;
+  function resizeDJ() {
+    const bottomSpace = 60; // hauteur des onglets en pixels
+    canvasDJ.width = innerWidth * DPR;
+    canvasDJ.height = (innerHeight - bottomSpace) * DPR;
+    canvasDJ.style.width = innerWidth + 'px';
+    canvasDJ.style.height = (innerHeight - bottomSpace) + 'px';
+    ctxDJ.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resizeDJ);
+  resizeDJ();
 
-  let flameFrame  = 0;
-  let frameCount  = 0;
 
+  const GRAVITY = 2000;
+  const JUMP_SPEED = 850;
+  const H_SPEED = 300;
+  const P_W = 80;
+  const P_H = 12;
+  const maxJumpH = (JUMP_SPEED * JUMP_SPEED) / (2 * GRAVITY) - 20;
+  const airtime = 2 * JUMP_SPEED / GRAVITY;
+  const maxHorz = H_SPEED * airtime * 0.9;
+  const backgrounds = ['#87ceeb', '#ffdead', '#90ee90', '#add8e6'];
 
-  (function(){
-    const canvasDJ = document.getElementById('game'),
-          ctxDJ    = canvasDJ.getContext('2d'),
-          DPR      = window.devicePixelRatio||1;
-    function resizeDJ(){
-      canvasDJ.width  = innerWidth*DPR;
-      canvasDJ.height = innerHeight*DPR;
-      canvasDJ.style.width  = innerWidth+'px';
-      canvasDJ.style.height = innerHeight+'px';
-      ctxDJ.setTransform(DPR,0,0,DPR,0,0);
+  const imgR = new Image(); imgR.src = 'assets/player_right.png';
+  const imgL = new Image(); imgL.src = 'assets/player_left.png';
+
+  const player = { x: 0, y: 0, w: 40, h: 40, vx: 0, vy: 0, facing: 'right' };
+  function placePlayer(px, py) {
+    player.x = px + (P_W - player.w) / 2;
+    player.y = py - player.h;
+    player.vy = -JUMP_SPEED;
+  }
+
+  let platforms = [], poolPlat = [];
+
+  let score = 0;
+
+  function makePlat(x, y, type = 1) {
+    const p = poolPlat.pop() || { x: 0, y: 0, w: P_W, h: P_H, type: 1, vx: 0 };
+    p.x = x; p.y = y; p.type = type;
+    p.vx = (type === 3) ? (Math.random() < 0.5 ? -MOVING_SPEED : MOVING_SPEED) : 0;
+    return p;
+  }
+
+  function recycle(i) {
+    poolPlat.push(platforms[i]);
+    platforms.splice(i, 1);
+  }
+
+  function initPlatforms() {
+    platforms = [];
+    poolPlat = [];
+
+    const startY = innerHeight - P_H;
+    const startX = innerWidth / 2 - P_W / 2;
+
+    platforms.push(makePlat(startX, startY, 1));
+    placePlayer(startX, startY);
+
+    let y = startY - maxJumpH;
+    while (y > -innerHeight) {
+      const prev = platforms[platforms.length - 1];
+      const r = Math.random();
+      let type = 1;
+      if (r < 0.15 && score > 5000) type = 3;
+      else if (r < 0.3 && score > 2000) type = 2;
+
+      let nx = prev.x + (Math.random() * 2 - 1) * maxHorz;
+      nx = Math.max(0, Math.min(innerWidth - P_W, nx));
+
+      platforms.push(makePlat(nx, y, type));
+      y -= maxJumpH;
     }
-    window.addEventListener('resize', resizeDJ);
-    resizeDJ();
+  }
 
-    const GRAVITY=2000, JUMP_SPEED=800, H_SPEED=300,
-          P_W=80, P_H=12;
-    const maxJumpH = JUMP_SPEED*JUMP_SPEED/(2*GRAVITY)-20,
-          airtime  = 2*JUMP_SPEED/GRAVITY,
-          maxHorz  = H_SPEED*airtime*0.9;
-    const backgrounds=['#87ceeb','#ffdead','#90ee90','#add8e6'];
-    const imgR=new Image(); imgR.src='assets/player_right.png';
-    const imgL=new Image(); imgL.src='assets/player_left.png';
+  initPlatforms();
 
-    const player={x:0,y:0,w:40,h:40,vx:0,vy:0,facing:'right'};
-    function placePlayer(px,py){
-      player.x = px + (P_W-player.w)/2;
-      player.y = py - player.h;
-      player.vy = -JUMP_SPEED;
+  let left = false, right = false;
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') left = true;
+    if (e.key === 'ArrowRight') right = true;
+  });
+  window.addEventListener('keyup', e => {
+    if (e.key === 'ArrowLeft') left = false;
+    if (e.key === 'ArrowRight') right = false;
+  });
+  canvasDJ.addEventListener('touchstart', e => {
+    const tx = e.touches[0].clientX;
+    left = tx < innerWidth / 2;
+    right = tx > innerWidth / 2;
+  });
+  canvasDJ.addEventListener('touchend', () => left = right = false);
+
+  const goScreen = document.getElementById('gameOverScreen'),
+        goScore = document.getElementById('gameOverScore'),
+        replay = document.getElementById('replayBtn');
+  function showGameOver(s) {
+    const prevBest = parseInt(localStorage.getItem('bestScore') || '0', 10);
+    if (Math.floor(s) > prevBest) {
+      localStorage.setItem('bestScore', Math.floor(s).toString());
     }
+    goScore.textContent = Math.floor(s);
+    goScreen.style.display = 'flex';
+  }
 
-    let platforms=[], poolPlat=[];
-    function makePlat(x, y, type = 1) {
-      const p = poolPlat.pop() || { x: 0, y: 0, w: P_W, h: P_H, type: 1, vx: 0 };
-      p.x = x;
-      p.y = y;
-      p.type = type;
-      p.vx = (type === 3) ? (Math.random() < 0.5 ? -H_SPEED * 0.5 : H_SPEED * 0.5) : 0;
-      return p;
+  replay.addEventListener('click', () => {
+    score = 0;
+    lastTime = null;
+    initPlatforms();
+    jetpack = null;
+    jetpackActive = false;
+    particles = [];
+    goScreen.style.display = 'none';
+    requestAnimationFrame(loop);
+  });
+
+  let lastTime = null;
+  function loop(ts) {
+    if (lastTime === null) {
+      lastTime = ts;
+      return requestAnimationFrame(loop);
     }
+    const dt = (ts - lastTime) / 1000;
+    lastTime = ts;
 
-    function recycle(i){ poolPlat.push(platforms[i]); platforms.splice(i,1); }
-    function initPlatforms() {
-      platforms = [];
-      poolPlat = [];
+    player.vx = (left ? -H_SPEED : 0) + (right ? H_SPEED : 0);
+    player.x = Math.max(0, Math.min(innerWidth - player.w, player.x + player.vx * dt));
 
-      const startY = innerHeight - P_H;
-      const startX = innerWidth / 2 - P_W / 2;
+    if (left) player.facing = 'left';
+    else if (right) player.facing = 'right';
 
-      // Plateforme de départ fixe
-      platforms.push(makePlat(startX, startY, 1));
-      placePlayer(startX, startY);
+    if (jetpackActive) {
+      jetpackTimer -= dt;
+      player.vy = -1000;
 
-      let y = startY - maxJumpH;
+      createParticle(player.x + player.w / 2 - 5, player.y + player.h);
+      createParticle(player.x + player.w / 2 + 5, player.y + player.h);
 
-      while (y > -innerHeight) {
-        const prev = platforms[platforms.length - 1];
-        let r = Math.random();
-        let type = 1;
-
-        if (r < 0.15 && score > 1000) {
-          type = 2; // jaune rebondissante à partir de 1000 points
-        } else if (r < 0.35 && score > 2000) {
-          type = 3; // bleue mouvante à partir de 2000 points
-        }
-
-        let nx = prev.x + (Math.random() * 2 - 1) * maxHorz;
-        nx = Math.max(0, Math.min(innerWidth - P_W, nx));
-
-        platforms.push(makePlat(nx, y, type));
-        y -= maxJumpH;
+      if (jetpackTimer <= 0) {
+        jetpackActive = false;
       }
+    } else {
+      player.vy += GRAVITY * dt;
     }
 
+    player.y += player.vy * dt;
 
-
-    let left=false, right=false;
-    window.addEventListener('keydown', e=>{
-      if(e.key==='ArrowLeft')  left=true;
-      if(e.key==='ArrowRight') right=true;
-    });
-    window.addEventListener('keyup', e=>{
-      if(e.key==='ArrowLeft')  left=false;
-      if(e.key==='ArrowRight') right=false;
-    });
-    canvasDJ.addEventListener('touchstart', e=>{
-      const tx=e.touches[0].clientX;
-      left = tx<innerWidth/2;
-      right= tx>innerWidth/2;
-    });
-    canvasDJ.addEventListener('touchend', ()=> left=right=false);
-
-    const goScreen= document.getElementById('gameOverScreen'),
-          goScore = document.getElementById('gameOverScore'),
-          replay  = document.getElementById('replayBtn');
-    function showGameOver(s){
-      const prevBest = parseInt(localStorage.getItem('bestScore')||'0',10);
-      if(Math.floor(s)>prevBest) localStorage.setItem('bestScore', Math.floor(s).toString());
-      goScore.textContent = Math.floor(s);
-      goScreen.style.display='flex';
+    if (player.y < innerHeight / 3) {
+      const dy = innerHeight / 3 - player.y;
+      player.y = innerHeight / 3;
+      platforms.forEach(p => p.y += dy);
+      if (jetpack) jetpack.y += dy;
+      score += Math.floor(dy);
     }
-    replay.addEventListener('click', ()=>{
-      score=0; initPlatforms(); lastTime=null; goScreen.style.display='none'; requestAnimationFrame(loop);
-    });
 
-    let lastTime=null, score=0;
-    function loop(ts){
-      if(lastTime===null){ lastTime=ts; return requestAnimationFrame(loop); }
-      const dt=(ts-lastTime)/1000; lastTime=ts;
-
-      // ─── Collectible Jetpack Collision ─────────────────────────
-      if (!jetpackCollected) {
-        const jx = jetpackItem.offsetLeft,
-              jy = jetpackItem.offsetTop,
-              jw = jetpackItem.offsetWidth,
-              jh = jetpackItem.offsetHeight;
-
+    if (player.vy > 0) {
+      for (const p of platforms) {
         if (
-          player.x < jx + jw && player.x + player.w > jx &&
-          player.y < jy + jh && player.y + player.h > jy
+          player.x + player.w > p.x &&
+          player.x < p.x + p.w &&
+          player.y + player.h > p.y &&
+          player.y + player.h - player.vy * dt < p.y
         ) {
-          jetpackCollected = true;
-          player.hasJetpack = true;
-          jetpackItem.style.display = 'none';
-          setTimeout(() => { player.hasJetpack = false; }, 5000);
+          if (p.type === 2) {
+            player.vy = -HIGH_BOUNCE;
+            playSfx('yellow'); // ✅ son plateforme jaune
+          } else {
+            player.vy = -JUMP_SPEED;
+            playSfx('jump'); // ✅ son normal
+          }
+          break;
         }
       }
+    }
 
-      // ─── Physics ───────────────────────────────────────────────
-      player.vx = (left ? -H_SPEED : 0) + (right ? H_SPEED : 0);
-      player.x  = Math.max(0, Math.min(innerWidth - player.w, player.x + player.vx * dt));
-      
-      // Changement de sprite selon la direction
-      if (left) player.facing = 'left';
-      else if (right) player.facing = 'right';
-      
-      if (player.hasJetpack) {
-        player.vy = -JUMP_SPEED * 0.6; // Vol constant vers le haut
+
+    platforms.forEach(p => {
+      if (p.type === 3) {
+        p.x += p.vx * dt;
+        if (p.x <= 0 || p.x + p.w >= innerWidth) p.vx *= -1;
+      }
+    });
+
+    if (jetpack &&
+      player.x + player.w > jetpack.x &&
+      player.x < jetpack.x + 30 &&
+      player.y + player.h > jetpack.y &&
+      player.y < jetpack.y + 30) {
+      jetpackActive = true;
+      jetpackTimer = JETPACK_DURATION;
+      playSfx('jetpack');
+      jetpack = null;
+    }
+
+    for (let i = platforms.length - 1; i >= 0; i--) {
+      if (platforms[i].y > innerHeight) recycle(i);
+    }
+    while (platforms.length < 12) {
+      const topY = Math.min(...platforms.map(p => p.y));
+      const prevX = platforms.find(p => p.y === topY).x;
+      let nx = prevX + (Math.random() * 2 - 1) * maxHorz;
+      nx = Math.max(0, Math.min(innerWidth - P_W, nx));
+      let type = 1;
+      const r = Math.random();
+      if (r < 0.15 && score > 5000) type = 3;
+      else if (r < 0.3 && score > 2000) type = 2;
+      platforms.push(makePlat(nx, topY - maxJumpH, type));
+    }
+
+    if (player.y > innerHeight) return showGameOver(score);
+
+    ctxDJ.fillStyle = backgrounds[Math.floor(score / 1000) % backgrounds.length];
+    ctxDJ.fillRect(0, 0, innerWidth, innerHeight);
+
+    platforms.forEach(p => {
+      ctxDJ.fillStyle =
+        p.type === 2 ? '#FFD700' :
+        p.type === 3 ? '#2288FF' :
+                       '#654321';
+      ctxDJ.fillRect(p.x, p.y, p.w, p.h);
+
+      if (p.type === 1 && !jetpack && Math.random() < 0.009 && score > 20000) {
+        jetpack = { x: p.x + P_W / 2 - 15, y: p.y - 30 };
+      }
+    });
+
+    if (jetpack) {
+      ctxDJ.drawImage(JETPACK_IMG, jetpack.x, jetpack.y, 30, 30);
+    }
+
+    const spr = player.facing === 'left' ? imgL : imgR;
+    ctxDJ.drawImage(spr, player.x, player.y, player.w, player.h);
+
+    // Particules
+    particles.forEach((p, i) => {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.alpha -= dt * 2;
+      if (p.alpha <= 0) {
+        particles.splice(i, 1);
       } else {
-        player.vy += GRAVITY * dt;     // Gravité normale
+        ctxDJ.fillStyle = `rgba(255, 100, 0, ${p.alpha.toFixed(2)})`;
+        ctxDJ.beginPath();
+        ctxDJ.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctxDJ.fill();
       }
+    });
 
-      player.y += player.vy * dt;
+    ctxDJ.fillStyle = '#000';
+    ctxDJ.font = '20px sans-serif';
+    ctxDJ.fillText(`Score: ${Math.floor(score)}`, 10, 30);
 
-      // ─── Jetpack Effect (flamme animée) ────────────────────────
-      if (player.hasJetpack && jetpackImg.complete && jetpackImg.naturalWidth > 0) {
-        frameCount++;
-        if (frameCount % 4 === 0) {
-          flameFrame = (flameFrame + 1) % totalFrames;
-        }
+    requestAnimationFrame(loop);
+  }
 
-        const col = flameFrame % columns;
-        const row = Math.floor(flameFrame / columns);
-
-        ctxDJ.drawImage(
-          jetpackImg,
-          col * frameWidth, row * frameHeight,
-          frameWidth, frameHeight,
-          player.x + (player.w - frameWidth) / 2,
-          player.y + player.h - 10,
-          frameWidth, frameHeight
-        );
-      }
-
-
-
-      // ─── Scroll & Score ───────────────────────────────────────
-      if (player.y < innerHeight/3) {
-        const dy = innerHeight/3 - player.y;
-        player.y = innerHeight/3;
-        platforms.forEach(p => p.y += dy);
-        score += Math.floor(dy);
-      }
-
-      // ─── Spawn du jetpack tous les 5000 pts ─────────────────────
-      if (score >= jetpackThreshold && jetpackItem.style.display !== 'block') {
-        // Choisit une plateforme au hasard
-        const plat = platforms[Math.floor(Math.random() * platforms.length)];
-        // Place le jetpack juste au-dessus de la plateforme
-        jetpackItem.style.left    = `${plat.x + (plat.w - jetpackItem.offsetWidth)/2}px`;
-        jetpackItem.style.top     = `${plat.y - jetpackItem.offsetHeight}px`;
-        jetpackItem.style.display = 'block';
-        // Prépare le prochain palier
-        jetpackThreshold += 5000;
-        jetpackCollected = false;
-      }
-
-
-      // ─── Collision Platforms & Jump ───────────────────────────
-      if (player.vy > 0) {
-        for (const p of platforms) {
-          const collided =
-            player.x + player.w > p.x &&
-            player.x < p.x + p.w &&
-            player.y + player.h > p.y &&
-            player.y + player.h - player.vy * dt < p.y;
-
-          if (collided) {
-            if (p.type === 2) {
-              player.vy = -JUMP_SPEED * 1.8;
-              playSfx('yellow'); // son plateforme jaune
-            } else {
-              player.vy = -JUMP_SPEED;
-              playSfx('jump'); // son normal
-            }
-            break;
-          }
-        }
-      }
-
-
-      // ─── Moving Platforms ─────────────────────────────────────
-      platforms.forEach(p=>{
-        if(p.type===3){
-          p.x += p.vx*dt;
-          if(p.x<=0||p.x+p.w>=innerWidth) p.vx*=-1;
-        }
-      });
-
-      // ─── Cleanup & Respawn ───────────────────────────────────
-      for(let i=platforms.length-1; i>=0; i--){
-        if(platforms[i].y > innerHeight) recycle(i);
-      }
-      while(platforms.length < 12){
-        const topY = Math.min(...platforms.map(p=>p.y)),
-              prevX= platforms.find(p=>p.y===topY).x,
-              r    = Math.random();
-        let type=1; if(r<0.15) type=2; else if(r<0.35) type=3;
-        let nx = prevX + (Math.random()*2-1)*maxHorz;
-        nx = Math.max(0, Math.min(innerWidth-P_W, nx));
-        platforms.push(makePlat(nx, topY-maxJumpH, type));
-      }
-
-      // ─── Game Over ───────────────────────────────────────────
-      if(player.y > innerHeight){
-        return showGameOver(score);
-      }
-
-      // ─── Draw Background ─────────────────────────────────────
-      ctxDJ.fillStyle = backgrounds[Math.floor(score/1000)%backgrounds.length];
-      ctxDJ.fillRect(0,0,innerWidth,innerHeight);
-
-      // ─── Draw Platforms ──────────────────────────────────────
-      platforms.forEach(p=>{
-        ctxDJ.fillStyle = p.type===2 ? '#ffd700' :
-                          p.type===3 ? '#2288ff' : '#654321';
-        ctxDJ.fillRect(p.x,p.y,p.w,p.h);
-      });
-
-      // ─── Particules ─────────────────────────────────────────
-      const particles = [];
-
-      function createJetpackParticles() {
-        for (let i = 0; i < 10; i++) { // plus de particules
-          particles.push({
-            x: player.x + player.w / 2 + (Math.random() * 8 - 4), // légère dispersion horizontale
-            y: player.y + player.h + Math.random() * 4,
-            vx: (Math.random() - 0.5) * 0.5,
-            vy: Math.random() * 1.5 + 1,
-            alpha: 1,
-            size: Math.random() * 2 + 1.5,
-          });
-        }
-      }
-
-      function updateAndDrawParticles() {
-        for (let i = particles.length - 1; i >= 0; i--) {
-          const p = particles[i];
-          p.x += p.vx;
-          p.y += p.vy;
-          p.alpha -= 0.02; // vie plus longue
-
-          if (p.alpha <= 0) {
-            particles.splice(i, 1);
-            continue;
-          }
-
-          ctxDJ.fillStyle = `rgba(255, 140, 0, ${p.alpha})`; // orange feu
-          ctxDJ.beginPath();
-          ctxDJ.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctxDJ.fill();
-        }
-      }
-
-      // ─── Jetpack Particles Effect ───────────────────────────
-      if (player.hasJetpack) {
-        createJetpackParticles();
-      }
-      updateAndDrawParticles();
-
-      // ─── Draw Player ─────────────────────────────────────────
-      const spr = player.facing === 'left' ? imgL : imgR;
-      ctxDJ.drawImage(spr, player.x, player.y, player.w, player.h);
-
-
-// ─── Draw Score ──────────────────────────────────────────
-ctxDJ.fillStyle = '#000';
-ctxDJ.font = '20px sans-serif';
-ctxDJ.fillText(`Score: ${Math.floor(score)}`, 10, 30);
-
-requestAnimationFrame(loop);
+  requestAnimationFrame(loop);
 }
 
-initPlatforms();
-requestAnimationFrame(loop);
-})();
-}
 
 
 // ─── Tab navigation ────────────────────────────────────────────
