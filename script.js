@@ -257,7 +257,7 @@ function launchDoodle() {
 
 
   const GRAVITY = 2000;
-  const JUMP_SPEED = 1000;
+  const JUMP_SPEED = 1100;
   const H_SPEED = 300;
   const P_W = 80;
   const P_H = 12;
