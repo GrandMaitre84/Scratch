@@ -261,7 +261,7 @@ function launchDoodle() {
   const H_SPEED = 300;
   const P_W = 80;
   const P_H = 12;
-  const PLATFORM_SPACING = 130;
+  const PLATFORM_SPACING = 140;
   const maxJumpH = (JUMP_SPEED * JUMP_SPEED) / (2 * GRAVITY) - 20;
   const airtime = 2 * JUMP_SPEED / GRAVITY;
   const maxHorz = H_SPEED * airtime * 0.9;
