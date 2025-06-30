@@ -54,31 +54,41 @@ function stopScratchSfx() {
 // ─── Lottie animations ────────────────────────────────────────────
 const introAnim = lottie.loadAnimation({
   container: document.getElementById('lottie-intro'),
-  renderer: 'svg', loop: false, autoplay: true,
+  renderer: 'svg',
+  loop: false,
+  autoplay: true,
   path: 'animations/intro.json'
 });
 introAnim.addEventListener('complete', () => {
   document.getElementById('lottie-intro').style.display = 'none';
 });
+
 const badgeContainer = document.getElementById('lottie-badge');
 const badgeAnim = lottie.loadAnimation({
   container: badgeContainer,
-  renderer: 'svg', loop: false, autoplay: false,
+  renderer: 'svg',
+  loop: false,
+  autoplay: false,
   path: 'animations/badge.json'
 });
 badgeAnim.setSpeed(2);
 badgeAnim.addEventListener('complete', () => {
   badgeContainer.style.display = 'none';
 });
+
+// ─── Task Done Lottie ────────────────────────────────────────────
 const taskDoneContainer = document.getElementById('lottie-task-done');
 const taskDoneAnim = lottie.loadAnimation({
   container: taskDoneContainer,
-  renderer: 'svg', loop: false, autoplay: false,
+  renderer: 'svg',
+  loop: false,
+  autoplay: false,
   path: 'animations/task-done.json'
 });
 taskDoneAnim.addEventListener('complete', () => {
   taskDoneContainer.style.display = 'none';
 });
+
 
 // ─── Daily card logic ───────────────────────────────────────────
 const cards = Array.from({ length: 10 }, (_, i) => `card${i+1}`);
@@ -586,6 +596,7 @@ window.addEventListener('resize', () => {
   if(views.play.classList.contains('active')) initScratch();
 });
 
+
 // ─── Utility to get pointer position ───────────────────────────
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
@@ -626,27 +637,56 @@ canvas.addEventListener('mouseleave', () => {
   }, { passive:false });
 });
 
+
 // ─── Clear detection at 65% ─────────────────────────────────────
 function checkClear() {
-  const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
-  let cleared=0;
-  for(let i=3; i<data.length; i+=4){
-    if(data[i]===0) cleared++;
+  // 1) Calcul du pourcentage gratté
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  let cleared = 0;
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] === 0) cleared++;
   }
-  if(cleared/(canvas.width*canvas.height)*100 >= 65){
-    localStorage.setItem('scratchCount',
-      (parseInt(localStorage.getItem('scratchCount')||'0',10)+1).toString()
-    );
-    updateProfileStats();
-    const newXp = parseInt(localStorage.getItem('xpTotal')||'0',10)+20;
-    localStorage.setItem('xpTotal', newXp.toString());
-    updateXP();
-    rewardBtn.style.display = 'block';
-    rewardBtn.disabled      = false;
+  const percent = (cleared / (canvas.width * canvas.height)) * 100;
+
+  if (percent >= 65) {
+    // 2) On marque ce scratch comme fait aujourd’hui
+    localStorage.setItem('lastScratchDate', todayISO);
+
+    // 3) Révéler entièrement l’image (faire disparaître l’overlay)
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 4) Désactive le grattage et coupe le son
     canvas.style.pointerEvents = 'none';
     stopScratchSfx();
+
+    // 5) Incrémente le compteur et met à jour le profil
+    const scratchCount = parseInt(localStorage.getItem('scratchCount') || '0', 10) + 1;
+    localStorage.setItem('scratchCount', scratchCount.toString());
+    updateProfileStats();
+
+    // 6) Ajoute 20 XP
+    const xpNew = parseInt(localStorage.getItem('xpTotal') || '0', 10) + 20;
+    localStorage.setItem('xpTotal', xpNew.toString());
+    updateXP();
+
+    // 7) Teste dynamiquement la présence du badge du jour
+    const badgeImg = new Image();
+    badgeImg.onload = () => {
+      // badge trouvé → on affiche REWARD
+      rewardBtn.style.display     = 'block';
+      rewardBtn.disabled          = false;
+      scratchStatus.style.display = 'none';
+    };
+    badgeImg.onerror = () => {
+      // pas de badge → on affiche directement le message
+      rewardBtn.style.display      = 'none';
+      scratchStatus.textContent    = 'NEXT SCRATCH TOMORROW';
+      scratchStatus.style.display  = 'block';
+    };
+    badgeImg.src = `images/${currentCard.replace('card','badge')}.png`;
   }
 }
+
 
 // ─── Reward handler ────────────────────────────────────────────
 rewardBtn.addEventListener('click', e => {
@@ -687,40 +727,71 @@ function renderBadges() {
 }
 
 // ─── ToDo & taskDone ───────────────────────────────────────────
-function getTodos(){ return JSON.parse(localStorage.getItem('todos')||'[]'); }
-function saveTodos(arr){ localStorage.setItem('todos', JSON.stringify(arr)); }
-function renderTodos(){
-  todoList.innerHTML='';
-  getTodos().forEach((text,idx)=>{
+function getTodos() {
+  return JSON.parse(localStorage.getItem('todos') || '[]');
+}
+
+function saveTodos(arr) {
+  localStorage.setItem('todos', JSON.stringify(arr));
+}
+
+function renderTodos() {
+  todoList.innerHTML = '';
+  getTodos().forEach((text, idx) => {
     const li = document.createElement('li');
-    const span = document.createElement('span'); span.className='todo-text'; span.textContent=text;
-    const cb = document.createElement('input'); cb.type='checkbox';
-    cb.addEventListener('change',()=>{
+    const span = document.createElement('span');
+    span.className = 'todo-text';
+    span.textContent = text;
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+
+    cb.addEventListener('change', () => {
+      // 1) Jouer son + animation
       playSfx('taskDone');
-      taskDoneContainer.style.display='flex';
-      taskDoneAnim.goToAndPlay(0,true);
-      const doneCnt=parseInt(localStorage.getItem('tasksDone')||'0',10)+1;
+      taskDoneContainer.style.display = 'flex';
+      taskDoneAnim.goToAndPlay(0, true);
+
+      // 2) Mettre à jour le compteur global
+      const doneCnt = parseInt(localStorage.getItem('tasksDone') || '0', 10) + 1;
       localStorage.setItem('tasksDone', doneCnt.toString());
-      const xpNew=parseInt(localStorage.getItem('xpTotal')||'0',10)+10;
-      localStorage.setItem('xpTotal', xpNew.toString());
-      updateXP();
-      setTimeout(()=>{
-        const rem=getTodos().filter((_,j)=>j!==idx);
-        saveTodos(rem);
-        renderTodos();
+
+      // 3) Award XP
+      const xpTotal = parseInt(localStorage.getItem('xpTotal') || '0', 10) + 10;
+      localStorage.setItem('xpTotal', xpTotal.toString());
+
+      // 4) Après la fin de l’anim, enlever la tâche et rafraîchir
+      setTimeout(() => {
+        // 1) mettre à jour le compteur « Tâches effectuées »
         updateProfileStats();
-      },500);
+        // 2) mettre à jour la barre XP
+        updateXP();  // <-- ici, utilise la fonction existante updateXP()
+
+        // 3) retirer la tâche cochée et rafraîchir la liste
+        const remaining = getTodos().filter((_, j) => j !== idx);
+        saveTodos(remaining);
+        renderTodos();
+      }, 500);
+
     });
-    li.append(span,cb);
+
+    li.append(span, cb);
     todoList.appendChild(li);
   });
 }
-todoAddBtn.addEventListener('click',()=>{
-  const v=todoIn.value.trim(); if(!v) return;
+
+todoAddBtn.addEventListener('click', () => {
+  const v = todoIn.value.trim();
+  if (!v) return;
   playSfx('createTask');
-  const arr=getTodos(); arr.unshift(v);
-  saveTodos(arr); todoIn.value=''; renderTodos();
+  const arr = getTodos();
+  arr.unshift(v);
+  saveTodos(arr);
+  todoIn.value = '';
+  renderTodos();
 });
+
+
 
 // ─── Service Worker & init ─────────────────────────────────────
 if('serviceWorker' in navigator){

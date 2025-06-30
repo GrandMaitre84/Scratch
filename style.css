@@ -60,20 +60,27 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;   /* centre verticalement */
+  height: 100%;               /* occupe toute la hauteur disponible */
   background: linear-gradient(135deg, #E0F7FA 0%, #B2EBF2 100%);
 }
+
+/* Titre de la vue Play */
 #view-play h2 {
   background: linear-gradient(90deg, #4FC3F7, #0288D1);
 }
+
+/* Zone de grattage : carré limité */
 #scratch-area {
   position: relative;
   width: 80vw;
-  max-width: 400px;
-  aspect-ratio: 1125/1200;
+  max-width: 400px;           /* ne dépassera jamais 400px de large */
+  aspect-ratio: 1125/1200;    /* ratio d’origine carte */
   border: 2px solid #0288D1;
   background: #FFF;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   touch-action: none;
+  margin-bottom: 1rem;        /* espace sous la zone */
 }
 #scratch-area img,
 #scratchCanvas {
@@ -253,6 +260,7 @@ html, body {
   background: rgba(40,167,69,0.1);
   padding: 1rem;
   text-align: center;
+  border-radius: 16px;
 }
 .stat-card strong {
   display: block;
@@ -264,6 +272,24 @@ html, body {
   font-size: 1.2rem;
   font-weight: bold;
 }
+
+/* Couleurs de fond personnalisées pour chaque stat-card */
+#card-pseudo            { background-color: #b4e59a; } /* rose pastel */
+#cards-scratched-card   { background-color: #E0F7FA; } /* bleu très clair */
+#rewards-count-card     { background-color: #FFF8E1; } /* jaune doux */
+#tasks-done-card        { background-color: #E8F5E9; } /* vert pâle */
+#level-card             { background-color: #F3E5F5; } /* lavande léger */
+#best-score-card        { background-color: #EDE7F6; } /* mauve discret */
+#xp-card                { background-color: #d28ed0; } /* menthe claire */
+
+#card-pseudo strong            { color: #FF69B4; }  /* rose vif */
+#cards-scratched-card strong   { color: #0288D1; }  /* bleu */
+#rewards-count-card strong     { color: #FFB74D; }  /* orange */
+#tasks-done-card strong        { color: #28A745; }  /* vert */
+#level-card strong             { color: #ff0026; }  /* violet */
+#best-score-card strong        { color: #FF8A65; }  /* corail */
+#xp-card strong                { color: #d505ff; }  /* menthe */
+
 
 /* XP BAR */
 .progress-bar {
@@ -437,3 +463,13 @@ body::after {
   50%  { filter: brightness(1.5); }
   100% { filter: brightness(1); }
 }
+/* Custom bottom tabs height */
+.tabs {
+  height: 60px;           /* nouvelle hauteur */
+}
+
+.tab {
+  padding-top: 0.75rem;   /* ajustement vertical */
+  padding-bottom: 0.75rem;
+}
+

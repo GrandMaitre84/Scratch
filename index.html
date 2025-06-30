@@ -46,6 +46,17 @@
               align-items:center;">
   </div>
 
+  <!-- conteneur d’animation task-done (caché par défaut) -->
+<div id="lottie-task-done"
+     style="display:none;
+            position:fixed; top:0; left:0;
+            width:100vw; height:100vh;
+            z-index:300;
+            justify-content:center;
+            align-items:center;">
+</div>
+
+
   <div class="app">
 
     <!-- PROFIL -->
@@ -88,7 +99,9 @@
         <button id="pseudo-btn">Valider</button>
       </div>
       <button id="reset-btn">Réinitialiser l’app</button>
+      <div id="app-version">APP v0.1.0</div>
     </div>
+    
 
     <!-- PLAY -->
     <div id="view-play" class="view">
