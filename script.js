@@ -257,10 +257,11 @@ function launchDoodle() {
 
 
   const GRAVITY = 2000;
-  const JUMP_SPEED = 1100;
+  const JUMP_SPEED = 850;
   const H_SPEED = 300;
   const P_W = 80;
   const P_H = 12;
+  const PLATFORM_SPACING = 160;
   const maxJumpH = (JUMP_SPEED * JUMP_SPEED) / (2 * GRAVITY) - 20;
   const airtime = 2 * JUMP_SPEED / GRAVITY;
   const maxHorz = H_SPEED * airtime * 0.9;
@@ -302,7 +303,7 @@ function launchDoodle() {
     platforms.push(makePlat(startX, startY, 1));
     placePlayer(startX, startY);
 
-    let y = startY - maxJumpH;
+    let y = startY - PLATFORM_SPACING;
     while (y > -innerHeight) {
       const prev = platforms[platforms.length - 1];
       const r = Math.random();
@@ -314,7 +315,7 @@ function launchDoodle() {
       nx = Math.max(0, Math.min(innerWidth - P_W, nx));
 
       platforms.push(makePlat(nx, y, type));
-      y -= maxJumpH;
+      y -= PLATFORM_SPACING;
     }
   }
 
@@ -449,7 +450,7 @@ function launchDoodle() {
       const r = Math.random();
       if (r < 0.15 && score > 5000) type = 3;
       else if (r < 0.3 && score > 2000) type = 2;
-      platforms.push(makePlat(nx, topY - maxJumpH, type));
+      platforms.push(makePlat(nx, topY - PLATFORM_SPACING, type));
     }
 
     if (player.y > innerHeight) return showGameOver(score);
