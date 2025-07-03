@@ -104,41 +104,39 @@ html, body {
   align-items: center;
 }
 
-/* Conteneur du bouton reward : réserve toujours l’espace */
+/* Conteneur du bouton reward : réserve toujours l’espace et centre le bouton */
 .reward-container {
-  height: 50px;               /* réserve la place du bouton */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-top: 1rem;
+  min-height: 60px;   /* réserve la hauteur sans couper le bouton */
 }
 
-/* Bouton REWARD */
+/* Bouton REWARD centré parfaitement */
 #reward-btn {
-  width: 120px;
-  height: 50px;
-  font-size: 1.2rem;
-}
-
-
-/* REWARD BUTTON */
-#reward-btn {
-  display: none;
-  margin-top: 1rem;
-  padding: 1rem 2rem;
-  width: 90%;
-  max-width: 360px;
+  display: flex;              
+  align-items: center;        
+  justify-content: center;    
+  /* on ne fixe plus de width : le padding détermine la taille */
+  padding: 0.75rem 1.5rem;    
   background: #28A745;
   color: #FFF;
   border: none;
   border-radius: 4px;
-  font-size: 1.125rem;
+  font-size: 1.2rem;
   font-weight: bold;
   cursor: pointer;
   transition: background 0.2s;
 }
+
 #reward-btn:hover {
   background: #218838;
 }
 #reward-btn:active {
   background: #1e7e34;
+}
+
 }
 
 /* REWARDS */
