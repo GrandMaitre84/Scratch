@@ -98,7 +98,7 @@ taskDoneAnim.addEventListener('complete', () => {
 
 
 // ─── Daily card logic ───────────────────────────────────────────
-const cards = Array.from({ length: 10 }, (_, i) => `card${i+1}`);
+const cards = Array.from({ length: 29 }, (_, i) => `card${i+1}`);
 let startDate = localStorage.getItem('startDate');
 const todayISO = new Date().toISOString().slice(0,10);
 if (!startDate) {
