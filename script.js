@@ -480,7 +480,7 @@ function launchDoodle() {
         !jetpack &&
         Math.random() < 0.05 &&
         score > 10000 &&
-        ts - lastJetpackTime > 20 // au moins 3 secondes depuis le dernier
+        ts - lastJetpackTime > 30000 // au moins 30 secondes depuis le dernier
       ) {
         jetpack = { x: p.x + P_W / 2 - 15, y: p.y - 30 };
         lastJetpackTime = ts;
@@ -542,7 +542,7 @@ function showTab(tab) {
     updateXP();
   }
   if(tab==='play'){
-    scratchImg.src = `images/${currentCard}.png`;
+    scratchImg.src = `images/${currentCard}.webp`;
     checkDailyScratch();
     initScratch();
   }

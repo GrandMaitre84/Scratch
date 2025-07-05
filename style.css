@@ -483,3 +483,7 @@ body::after {
   padding-bottom: 0.75rem;
 }
 
+/* Masquer le bouton reset */
+#reset-btn {
+  display: none !important;
+}
