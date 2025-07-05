@@ -27,7 +27,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="style.css?v=0.1.8"/>
 </head>
 <body>
   <!-- conteneur d’intro Lottie -->
@@ -47,15 +47,14 @@
   </div>
 
   <!-- conteneur d’animation task-done (caché par défaut) -->
-<div id="lottie-task-done"
-     style="display:none;
-            position:fixed; top:0; left:0;
-            width:100vw; height:100vh;
-            z-index:300;
-            justify-content:center;
-            align-items:center;">
-</div>
-
+  <div id="lottie-task-done"
+       style="display:none;
+              position:fixed; top:0; left:0;
+              width:100vw; height:100vh;
+              z-index:300;
+              justify-content:center;
+              align-items:center;">
+  </div>
 
   <div class="app">
 
@@ -99,9 +98,8 @@
         <button id="pseudo-btn">Valider</button>
       </div>
       <button id="reset-btn">Réinitialiser l’app</button>
-      <div id="app-version">App v0.1.7 (05/07/2025)</div>
+      <div id="app-version">App v0.1.8 (05/07/2025)</div>
     </div>
-    
 
     <!-- PLAY -->
     <div id="view-play" class="view">
@@ -118,7 +116,6 @@
         </div>
       </div>
     </div>
-
 
     <!-- REWARDS -->
     <div id="view-badges" class="view">
@@ -178,6 +175,6 @@
   <!-- Scripts -->
   <script src="https://unpkg.com/lottie-web@latest/build/player/lottie.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
-  <script src="script.js"></script>
+  <script src="script.js?v=0.1.8"></script>
 </body>
 </html>
