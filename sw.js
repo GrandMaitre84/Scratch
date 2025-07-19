@@ -1,7 +1,5 @@
-// sw.js
-const CACHE_NAME = 'scratchmouse-v8';  // incrémente à chaque déploiement
+const CACHE_NAME = 'scratchmouse-v9';  // incrémente à chaque déploiement
 const ASSETS = [
-  '/',
   '/index.html',
   '/style.css?v=0.1.8',
   '/script.js?v=0.1.8',
@@ -50,7 +48,6 @@ const ASSETS = [
   '/images/card33.webp',
   '/images/card34.webp',
   '/images/card35.webp',
-
   // badges en PNG
   '/images/badge1.png',
   '/images/badge4.png',
@@ -66,15 +63,19 @@ const ASSETS = [
   '/images/badge32.png',
   '/images/badge34.png',
   '/images/badge35.png',
-  // … ajoute les autres badges ici …
 ];
 
 // 1) Install : pré-cache et passe directement à la nouvelle version
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(async cache => {
+      try {
+        await cache.addAll(ASSETS);
+      } catch (err) {
+        console.warn('[SW] Échec lors du precache :', err);
+      }
+    })
   );
 });
 
@@ -91,7 +92,7 @@ self.addEventListener('activate', event => {
   );
 });
 
-// 3) Fetch : stratégie "Cache First" ciblée sur le cache courant
+// 3) Fetch : stratégie "Cache First"
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.open(CACHE_NAME).then(cache =>
