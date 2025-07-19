@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_NAME = 'scratchmouse-v7';  // incrémente à chaque déploiement
+const CACHE_NAME = 'scratchmouse-v8';  // incrémente à chaque déploiement
 const ASSETS = [
   '/',
   '/index.html',

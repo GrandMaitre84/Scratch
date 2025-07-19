@@ -27,7 +27,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="style.css?v=0.1.8"/>
+  <link rel="stylesheet" href="style.css?v=0.1.9"/>
 </head>
 <body>
   <!-- conteneur d’intro Lottie -->
@@ -38,16 +38,6 @@
 
   <!-- conteneur d’animation badge (caché par défaut) -->
   <div id="lottie-badge"
-       style="display:none;
-              position:fixed; top:0; left:0;
-              width:100vw; height:100vh;
-              z-index:300;
-              justify-content:center;
-              align-items:center;">
-  </div>
-
-  <!-- conteneur d’animation task-done (caché par défaut) -->
-  <div id="lottie-task-done"
        style="display:none;
               position:fixed; top:0; left:0;
               width:100vw; height:100vh;
@@ -73,10 +63,6 @@
           <strong>Rewards</strong>
           <p id="rewards-count">0</p>
         </div>
-        <div class="stat-card" id="tasks-done-card">
-          <strong>Tasks completed</strong>
-          <p id="tasks-done-count">0</p>
-        </div>
         <div class="stat-card" id="level-card">
           <strong>Level of love</strong>
           <p id="level-display">0</p>
@@ -84,6 +70,10 @@
         <div class="stat-card full-width" id="best-score-card">
           <strong>Best Score</strong>
           <p id="best-score">0</p>
+        </div>
+        <div class="stat-card full-width" id="total-steps-card">
+          <strong>Total Steps</strong>
+          <p id="total-steps">0</p>
         </div>
         <div class="stat-card full-width" id="xp-card">
           <strong>XP Progress</strong>
@@ -98,19 +88,17 @@
         <button id="pseudo-btn">Valider</button>
       </div>
       <button id="reset-btn">Réinitialiser l’app</button>
-      <div id="app-version">App v0.1.8 (05/07/2025)</div>
+      <div id="app-version">App v0.1.9 (19/07/2025)</div>
     </div>
 
     <!-- PLAY -->
     <div id="view-play" class="view">
       <h2>SCRATCH</h2>
-
       <div class="scratch-wrapper">
         <div id="scratch-area">
           <img id="scratch-image" src="images/card1.webp" alt="Carte à gratter">
           <canvas id="scratchCanvas"></canvas>
         </div>
-
         <div class="reward-container">
           <button id="reward-btn" style="display: none;">REWARD</button>
         </div>
@@ -123,32 +111,108 @@
       <ul id="badges-list"></ul>
     </div>
 
-    <!-- TO DO -->
-    <div id="view-todo" class="view">
-      <h2>TO DO</h2>
-      <div class="todo-input">
-        <input id="todo-input" type="text" placeholder="Nouvelle tâche…" />
-        <button id="todo-add-btn">Ajouter</button>
-      </div>
-      <ul id="todo-list"></ul>
-    </div>
-
     <!-- GAME -->
     <div id="view-game" class="view">
-      <!-- Écran de démarrage -->
       <div id="gameStartScreen" class="game-start-screen">
         <button id="startGameBtn">Play</button>
       </div>
-
       <canvas id="game"></canvas>
       <div id="gameOverScreen">
         <h1>Game Over</h1>
         <p>Score : <span id="gameOverScore">0</span></p>
         <button id="replayBtn">Replay</button>
       </div>
-
-      <!-- Collectible Jetpack -->
       <div id="jetpack-item"></div>
+    </div>
+
+    <!-- TAMAGOCHI -->
+    <div id="view-tamagochi" class="view">
+      <div id="app-container">
+        <main id="tamagochi-app">
+
+          <!-- 1. Santé Générale -->
+          <section id="health-card" class="card">
+            <h2>Santé Générale</h2>
+            <div class="bar-bg">
+              <div class="bar-fill" id="health-bar-fill"></div>
+            </div>
+            <span id="health-pct">0 %</span>
+          </section>
+
+          <!-- 2. Message d’état -->
+          <div id="status-message"></div>
+
+          <!-- 3. Zone centrale : boutons à gauche, pet au centre, boutons à droite -->
+          <div id="main-area">
+            <div id="supplements-left">
+              <button id="btn-multivit" class="supplement-btn multivit">
+                <i class="fas fa-capsules"></i>
+                <span class="supp-label">Multivitamines</span>
+              </button>
+              <button id="btn-magnesium" class="supplement-btn magnesium">
+                <i class="fas fa-wine-bottle"></i>
+                <span class="supp-label">Magnésium</span>
+              </button>
+            </div>
+            <section id="pet-card" class="card">
+              <div class="stars-container">
+                <i class="fas fa-star star" style="top:10%; left:20%"></i>
+                <i class="fas fa-star star" style="top:15%; left:75%"></i>
+                <i class="fas fa-star star" style="top:40%; left:50%"></i>
+                <i class="fas fa-star star" style="top:65%; left:30%"></i>
+                <i class="fas fa-star star" style="top:70%; left:80%"></i>
+                <i class="fas fa-star star" style="top:30%; left:10%"></i>
+                <i class="fas fa-star star" style="top:50%; left:90%"></i>
+                <i class="fas fa-star star" style="top:85%; left:40%"></i>
+              </div>
+              <img src="images/pet-neutral.png" alt="Mon Tamagochi" id="pet-img">
+            </section>
+            <div id="supplements-right">
+              <button id="btn-vitd" class="supplement-btn vitd">
+                <i class="fas fa-sun"></i>
+                <span class="supp-label">Vitamine D</span>
+              </button>
+              <button id="btn-iode" class="supplement-btn iode">
+                <i class="fas fa-water"></i>
+                <span class="supp-label">Iode</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4. Stats secondaires -->
+          <section id="stats-card" class="card">
+            <div class="stat">
+              <label><i class="fas fa-bolt"></i> Énergy</label>
+              <div class="bar-bg small">
+                <div class="bar-fill energy" id="energy-bar"></div>
+              </div>
+            </div>
+            <div class="stat">
+              <label><i class="fas fa-smile"></i> Hapiness</label>
+              <div class="bar-bg small">
+                <div class="bar-fill happiness" id="happiness-bar"></div>
+              </div>
+            </div>
+            <div class="stat">
+              <label><i class="fas fa-tachometer-alt"></i> Stress</label>
+              <div class="bar-bg small">
+                <div class="bar-fill stress" id="stress-bar"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 5. Pas du jour (simple bouton + jauge) -->
+          <section id="steps-card" class="card">
+            <button id="btn-edit-steps">
+              <i class="fas fa-walking"></i> Pas du jour
+            </button>
+            <div class="bar-bg small">
+              <div class="bar-fill" id="steps-bar-fill"></div>
+            </div>
+          </section>
+
+        </main>
+      </div>
     </div>
 
     <!-- onglets en bas -->
@@ -162,11 +226,11 @@
       <button id="tab-badges" class="tab">
         <img src="icons/trophy.png" alt="Rewards">
       </button>
-      <button id="tab-todo" class="tab">
-        <img src="icons/check.png" alt="To Do">
-      </button>
       <button id="tab-game" class="tab">
         <img src="icons/gamepad.png" alt="Game">
+      </button>
+      <button id="tab-tamagochi" class="tab">
+        <img src="icons/pet.png" alt="Tamagochi">
       </button>
     </div>
 
@@ -175,6 +239,6 @@
   <!-- Scripts -->
   <script src="https://unpkg.com/lottie-web@latest/build/player/lottie.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
-  <script src="script.js?v=0.1.8"></script>
+  <script src="script.js?v=0.1.9"></script>
 </body>
 </html>

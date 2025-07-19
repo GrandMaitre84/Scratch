@@ -1,16 +1,237 @@
+// ─── Flags d’initialisation ───────────────────────────────────
+let tamagochiInitialized = false;
+
 // ─── WebAudio setup pour ultra-low-latency ─────────────────────────
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 document.body.addEventListener('touchstart', () => {
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }, { once: true });
+// ─── Init Mon Tamagochi ─────────────────────────────────────
+function initTamagochi() {
+  if (tamagochiInitialized) return;
+  tamagochiInitialized = true;
+
+  // --- Constantes de configuration ---
+  const MAX_TAKES  = { multivit: 4, magnesium: 2, vitD: 1, iode: 1 };
+  const SUPP_PCT   = 6.25;
+  const RETENTION  = 0.7;
+  const STEPS_GOAL = 6000;
+  const STEPS_PCT  = 50;
+
+  const EFFECTS = {
+    multivit:  { energy:  8, happiness:  8, stress:  -8 },
+    magnesium: { energy:  2, happiness:  2, stress: -20 },
+    vitD:      { energy:  5, happiness: 15, stress: -15 },
+    iode:      { energy:  5, happiness:  5, stress:  -5 }
+  };
+  const MAX_PTS = {
+    energy:    4*EFFECTS.multivit.energy + 2*EFFECTS.magnesium.energy + EFFECTS.vitD.energy + EFFECTS.iode.energy,
+    happiness: 4*EFFECTS.multivit.happiness + 2*EFFECTS.magnesium.happiness + EFFECTS.vitD.happiness + EFFECTS.iode.happiness,
+    stress:    Math.abs(4*EFFECTS.multivit.stress) + Math.abs(2*EFFECTS.magnesium.stress) + Math.abs(EFFECTS.vitD.stress) + Math.abs(EFFECTS.iode.stress)
+  };
+
+  // --- État ---
+  let state = {
+    yesterdayHealth: 0,
+    baseline:        0,
+    taken:           { multivit:0, magnesium:0, vitD:0, iode:0 },
+    steps:           null,
+    health:          0
+  };
+
+  // --- Sélecteurs ---
+  const healthFill    = document.getElementById('health-bar-fill');
+  const healthPct     = document.getElementById('health-pct');
+  const petImg        = document.getElementById('pet-img');
+  const petCard       = document.getElementById('pet-card');
+  const statusMessage = document.getElementById('status-message');
+  const energyBar     = document.getElementById('energy-bar');
+  const happinessBar  = document.getElementById('happiness-bar');
+  const stressBar     = document.getElementById('stress-bar');
+  const btnEditSteps  = document.getElementById('btn-edit-steps');
+  const stepsBarFill  = document.getElementById('steps-bar-fill');
+  const btns = {
+    multivit:  document.getElementById('btn-multivit'),
+    magnesium: document.getElementById('btn-magnesium'),
+    vitD:      document.getElementById('btn-vitd'),
+    iode:      document.getElementById('btn-iode')
+  };
+
+  // --- Clés localStorage ---
+  const KEY_DATE  = 'tamagochi-date';
+  const KEY_YEST  = 'tamagochi-yesterdayHealth';
+  const KEY_BASE  = 'tamagochi-baseline';
+  const KEY_TAKEN = 'tamagochi-taken';
+  const KEY_STEPS = 'tamagochi-steps';
+
+  // --- Load / Save ---
+  function loadState() {
+    state.yesterdayHealth = parseFloat(localStorage.getItem(KEY_YEST)) || 0;
+    state.baseline        = parseFloat(localStorage.getItem(KEY_BASE)) || (state.yesterdayHealth * RETENTION);
+
+    try {
+      const takenStored = JSON.parse(localStorage.getItem(KEY_TAKEN));
+      if (takenStored && typeof takenStored === 'object') {
+        state.taken = { multivit:0, magnesium:0, vitD:0, iode:0, ...takenStored };
+      } else {
+        state.taken = { multivit:0, magnesium:0, vitD:0, iode:0 };
+      }
+    } catch {
+      state.taken = { multivit:0, magnesium:0, vitD:0, iode:0 };
+    }
+
+    const s = localStorage.getItem(KEY_STEPS);
+    state.steps = s !== null ? parseInt(s, 10) : null;
+  }
+
+  function saveState() {
+    localStorage.setItem(KEY_YEST,  state.yesterdayHealth);
+    localStorage.setItem(KEY_BASE,  state.baseline);
+    localStorage.setItem(KEY_TAKEN, JSON.stringify(state.taken));
+    if (state.steps !== null) localStorage.setItem(KEY_STEPS, state.steps);
+    else localStorage.removeItem(KEY_STEPS);
+  }
+
+
+  // --- Reset quotidien ---
+  function resetIfNewDay() {
+    const today = new Date().toISOString().split('T')[0];
+    if (localStorage.getItem(KEY_DATE) !== today) {
+      state.yesterdayHealth = state.health;
+      state.baseline        = state.yesterdayHealth * RETENTION;
+      state.taken           = { multivit:0, magnesium:0, vitD:0, iode:0 };
+      state.steps           = null;
+      localStorage.setItem(KEY_DATE, today);
+      saveState();
+    }
+  }
+
+  // --- Calcul santé ---
+  function computeHealth() {
+    const totalTakes = Object.values(state.taken).reduce((a,b) => a+b, 0);
+    const supplPct   = totalTakes * SUPP_PCT;
+    const stepsPct   = state.steps !== null
+      ? Math.min(state.steps / STEPS_GOAL,1) * STEPS_PCT
+      : 0;
+    state.health     = Math.min(100, state.baseline + supplPct + stepsPct);
+  }
+
+  // --- Update UI ---
+  function updateUI() {
+    healthFill.style.width = `${state.health}%`;
+    healthPct.textContent  = `${Math.round(state.health)} %`;
+
+    if      (state.health >= 80) petImg.src = 'images/pet-very-happy.png';
+    else if (state.health >= 60) petImg.src = 'images/pet-happy.png';
+    else if (state.health >= 50) petImg.src = 'images/pet-neutral.png';
+    else if (state.health >= 25) petImg.src = 'images/pet-sad.png';
+    else                          petImg.src = 'images/pet-depressed.png';
+
+    petCard.classList.toggle('show-stars', state.health >= 60);
+
+    statusMessage.textContent =
+      state.health >= 80 ? '🤩 Super Happy Mousie!' :
+      state.health >= 60 ? '😊 Happy Mousie !' :
+      state.health >= 50 ? '😐 Neutral Mouse' :
+      state.health >= 25 ? '☹️ Sad mouse…' : '😢 Crying Mouse';
+
+    console.log('Compléments pris (state.taken) :', JSON.stringify(state.taken));
+    let e=0,h=0,s=0;
+    for (let k in state.taken) {
+      e += EFFECTS[k].energy    * state.taken[k];
+      h += EFFECTS[k].happiness * state.taken[k];
+      s += EFFECTS[k].stress    * state.taken[k];
+    }
+    energyBar.style.width    = `${Math.min(100,Math.round(e/MAX_PTS.energy*100))}%`;
+    happinessBar.style.width = `${Math.min(100,Math.round(h/MAX_PTS.happiness*100))}%`;
+    const sp = 100 - Math.min(100, Math.round(Math.abs(s)/MAX_PTS.stress*100));
+    stressBar.style.width    = `${Math.max(0,sp)}%`;
+
+    if (state.steps !== null) {
+      btnEditSteps.textContent = `${state.steps} pas`;
+      btnEditSteps.disabled    = true;
+      stepsBarFill.style.width = `${Math.min(state.steps/STEPS_GOAL,1)*100}%`;
+    } else {
+      btnEditSteps.innerHTML   = '<i class="fas fa-walking"></i> Pas du jour';
+      btnEditSteps.disabled    = false;
+      stepsBarFill.style.width = '0%';
+    }
+
+    for (let k in btns) {
+      btns[k].disabled = state.taken[k] >= MAX_TAKES[k];
+    }
+  }
+
+  // --- Handlers ---
+  function handleEditSteps() {
+    const v = parseInt(prompt("Combien de pas as-tu fait aujourd'hui ?",""), 10);
+    if (!isNaN(v) && v >= 0) {
+      state.steps = v;
+
+      // 1) Cumuler le total de pas
+      const prevTotal = parseInt(localStorage.getItem('totalSteps') || '0', 10);
+      const newTotal  = prevTotal + v;
+      localStorage.setItem('totalSteps', newTotal);
+
+      // 2) Calcul des paliers de 10 000 franchis
+      const prevThresholds = Math.floor(prevTotal / 10000);
+      const newThresholds  = Math.floor(newTotal  / 10000);
+      const crossed        = newThresholds - prevThresholds;
+
+      // 3) Ajouter 20 XP par palier franchi
+      if (crossed > 0) {
+        const xpOld = parseInt(localStorage.getItem('xpTotal') || '0', 10);
+        const xpNew = xpOld + crossed * 20;
+        localStorage.setItem('xpTotal', xpNew.toString());
+        updateXP();
+      }
+
+      // 4) Mettre à jour santé et UI
+      computeHealth();
+      updateUI();
+      saveState();
+    }
+  }
+  // ─── Nouveau : handler pour les compléments ───
+  function handleSupplement(key) {
+    if (state.taken[key] < MAX_TAKES[key]) {
+      state.taken[key]++;
+      computeHealth();
+      updateUI();
+      saveState();
+    }
+  }
+
+  // ─── Init final ───
+  loadState();
+  resetIfNewDay();
+  computeHealth();
+  updateUI();
+
+  // ─── Brancher les événements sur les boutons ───
+  btnEditSteps.addEventListener('click', handleEditSteps);
+  btns.multivit .addEventListener('click', () => handleSupplement('multivit'));
+  btns.magnesium.addEventListener('click', () => handleSupplement('magnesium'));
+  btns.vitD      .addEventListener('click', () => handleSupplement('vitD'));
+  btns.iode      .addEventListener('click', () => handleSupplement('iode'));
+}
+
+// ─── Dans showTab(tab) ─────────────────────────────────────────
+function showTab(tab) {
+  Object.values(views).forEach(v => v.classList.remove('active'));
+  Object.values(tabs).forEach(b => b.classList.remove('active'));
+  views[tab].classList.add('active');
+  tabs[tab].classList.add('active');
+  playSfx('tab');
+
+  if (tab === 'tamagochi') initTamagochi();
+}
 
 const SFX_FILES = {
   tab:        'sounds/tab-click.mp3',
   scratch:    'sounds/scratch.mp3',
   reward:     'sounds/reward.mp3',
   badge:      'sounds/badge.mp3',
-  taskDone:   'sounds/task-done.mp3',
-  createTask: 'sounds/create-task.mp3',
   jump:       'sounds/jump.wav',
   yellow:     'sounds/yellow_platform.wav',
   jetpack: 'sounds/jetpack1.mp3'
@@ -83,19 +304,6 @@ badgeAnim.addEventListener('complete', () => {
   badgeContainer.style.display = 'none';
 });
 
-// ─── Task Done Lottie ────────────────────────────────────────────
-const taskDoneContainer = document.getElementById('lottie-task-done');
-const taskDoneAnim = lottie.loadAnimation({
-  container: taskDoneContainer,
-  renderer: 'svg',
-  loop: false,
-  autoplay: false,
-  path: 'animations/task-done.json'
-});
-taskDoneAnim.addEventListener('complete', () => {
-  taskDoneContainer.style.display = 'none';
-});
-
 
 // ─── Daily card logic ───────────────────────────────────────────
 const cards = Array.from({ length: 35 }, (_, i) => `card${i+1}`);
@@ -113,15 +321,16 @@ const tabs      = {
   profile: document.getElementById('tab-profile'),
   play:    document.getElementById('tab-play'),
   badges:  document.getElementById('tab-badges'),
-  todo:    document.getElementById('tab-todo'),
-  game:    document.getElementById('tab-game')
+  game:    document.getElementById('tab-game'),
+  tamagochi: document.getElementById('tab-tamagochi')
 };
+const totalStepsP = document.getElementById('total-steps')
 const views     = {
   profile: document.getElementById('view-profile'),
   play:    document.getElementById('view-play'),
   badges:  document.getElementById('view-badges'),
-  todo:    document.getElementById('view-todo'),
-  game:    document.getElementById('view-game')
+  game:    document.getElementById('view-game'),
+  tamagochi: document.getElementById('view-tamagochi')
 };
 tabs.game.addEventListener('click', () => {
   showView('view-game');
@@ -138,7 +347,6 @@ const profileForm = document.getElementById('profile-form');
 const profileStats= document.querySelector('.profile-stats');
 const cardsCount  = document.getElementById('cards-scratched');
 const rewardsCount= document.getElementById('rewards-count');
-const tasksCount  = document.getElementById('tasks-done-count');
 const levelDisp   = document.getElementById('level-display');
 const xpBar       = document.getElementById('xp-bar');
 const xpText      = document.getElementById('xp-text');
@@ -151,9 +359,7 @@ const ctx         = canvas.getContext('2d');
 const rewardBtn   = document.getElementById('reward-btn');
 const badgesList  = document.getElementById('badges-list');
 
-const todoIn      = document.getElementById('todo-input');
-const todoAddBtn  = document.getElementById('todo-add-btn');
-const todoList    = document.getElementById('todo-list');
+
 
 const startScreen = document.getElementById('gameStartScreen');
 const startBtn    = document.getElementById('startGameBtn');
@@ -198,31 +404,43 @@ pseudoBtn.addEventListener('click', () => {
 
 // ─── Profile stats, XP & Best Score ─────────────────────────────
 function updateProfileStats() {
-  cardsCount.textContent   = parseInt(localStorage.getItem('scratchCount')||'0',10);
-  rewardsCount.textContent = JSON.parse(localStorage.getItem('scratchLog')||'[]').length;
-  tasksCount.textContent   = parseInt(localStorage.getItem('tasksDone')||'0',10);
+  cardsCount.textContent   = parseInt(localStorage.getItem('scratchCount')  || '0', 10);
+  rewardsCount.textContent = JSON.parse(localStorage.getItem('scratchLog')   || '[]').length;
+
+  // cumul des pas
+  const total = parseInt(localStorage.getItem('totalSteps') || '0', 10);
+  totalStepsP.textContent  = total;
 }
+
 function updateXP() {
-  const xp = parseInt(localStorage.getItem('xpTotal')||'0',10);
-  const lvl = Math.floor(xp/100), rem = xp%100;
-  levelDisp.textContent = lvl;
-  xpBar.style.width     = `${rem}%`;
-  xpText.textContent    = `${rem}/100`;
+  const xp  = parseInt(localStorage.getItem('xpTotal') || '0', 10);
+  const lvl = Math.floor(xp / 100), rem = xp % 100;
+  levelDisp.textContent    = lvl;
+  xpBar.style.width        = `${rem}%`;
+  xpText.textContent       = `${rem}/100`;
 }
+
 function updateBestScore() {
-  const best = parseInt(localStorage.getItem('bestScore')||'0',10);
-  bestScoreP.textContent = best;
+  const best = parseInt(localStorage.getItem('bestScore') || '0', 10);
+  bestScoreP.textContent   = best;
 }
+
+// +1 niveau tous les 1000 points
+function getLevel(score) {
+  return Math.floor(score / 1000);
+}
+
 
 
 // ─── launch Doodle Jump Clone ───────────────────────────────────
 const HIGH_BOUNCE = 1800;
-const MOVING_SPEED = 100;
+const BASE_MOVING_SPEED = 100;
 
 let doodleStarted = false;
 let jetpack = null;
 let jetpackActive = false;
 let jetpackTimer = 0;
+let jetpackReady   = false; 
 const JETPACK_DURATION = 2; // secondes
 const JETPACK_IMG = new Image();
 JETPACK_IMG.src = 'assets/jetpack.png';
@@ -246,6 +464,17 @@ function launchDoodle() {
   if (doodleStarted) return;
   doodleStarted = true;
 
+  const BASE_MOB_PROB  = 0.15;
+  const MOB_PROB_INCR  = 0.01;
+  const MAX_MOB_PROB   = 0.5;
+  const BASE_BOUNCE_PROB = 0.10;
+  
+  // ─── Nouveaux paramètres piège ───
+  const BASE_TRAP_PROB   = 0.10;  // 10 % de plateformes piège au niveau 0
+  const TRAP_PROB_INCR   = 0.01;  // +1 % par niveau
+  const MAX_TRAP_PROB    = 0.30;  // pas plus de 30 % de pièges
+
+
   const canvasDJ = document.getElementById('game');
   const ctxDJ = canvasDJ.getContext('2d');
   const DPR = window.devicePixelRatio || 1;
@@ -262,15 +491,22 @@ function launchDoodle() {
   resizeDJ();
 
 
-  const GRAVITY = 2000;
-  const JUMP_SPEED = 850;
-  const H_SPEED = 300;
-  const P_W = 80;
-  const P_H = 12;
-  const PLATFORM_SPACING = 140;
-  const maxJumpH = (JUMP_SPEED * JUMP_SPEED) / (2 * GRAVITY) - 20;
-  const airtime = 2 * JUMP_SPEED / GRAVITY;
-  const maxHorz = H_SPEED * airtime * 0.9;
+  const GRAVITY        = 2000;
+  const JUMP_SPEED     = 700;
+  const H_SPEED        = 300;
+  const P_W            = 80;
+  const P_H            = 12;
+
+  // 1) On calcule d’abord la hauteur de saut
+  const maxJumpH       = (JUMP_SPEED * JUMP_SPEED) / (2 * GRAVITY) - 20;
+  const airtime        = 2 * JUMP_SPEED / GRAVITY;
+  const maxHorz        = H_SPEED * airtime * 0.9;
+  // Plage horizontale plus sûre (50% de la portée max)
+  const horizRange = maxHorz * 0.5;
+
+  // 2) Puis on définit l’espacement en fonction de maxJumpH
+  const PLATFORM_SPACING = Math.min(100, maxJumpH * 0.8);
+
   const backgrounds = ['#87ceeb', '#ffdead', '#90ee90', '#add8e6'];
 
   const imgR = new Image(); imgR.src = 'assets/player_right.png';
@@ -290,9 +526,13 @@ function launchDoodle() {
   function makePlat(x, y, type = 1) {
     const p = poolPlat.pop() || { x: 0, y: 0, w: P_W, h: P_H, type: 1, vx: 0 };
     p.x = x; p.y = y; p.type = type;
-    p.vx = (type === 3) ? (Math.random() < 0.5 ? -MOVING_SPEED : MOVING_SPEED) : 0;
+    // on ne stocke plus que la direction (-1 ou +1) pour p.vx
+    p.vx = (type === 3)
+      ? (Math.random() < 0.5 ? -1 : 1)
+      : 0;
     return p;
   }
+
 
   function recycle(i) {
     poolPlat.push(platforms[i]);
@@ -301,29 +541,47 @@ function launchDoodle() {
 
   function initPlatforms() {
     platforms = [];
-    poolPlat = [];
+    poolPlat  = [];
 
     const startY = innerHeight - P_H;
-    const startX = innerWidth / 2 - P_W / 2;
+    const startX = innerWidth  / 2 - P_W / 2;
 
+    // 1) plateforme de départ et position du joueur
     platforms.push(makePlat(startX, startY, 1));
     placePlayer(startX, startY);
 
-    let y = startY - PLATFORM_SPACING;
+    // 2) calcul de la plage horizontale sécurisée
+    const airtime    = 2 * JUMP_SPEED / GRAVITY;
+    const maxHorz    = H_SPEED * airtime * 0.9;
+    const horizRange = maxHorz * 0.5;  // 50% de la portée max
+
+    // 3) génération des lignes tant que la rangée est visible
+    let prevX = startX;
+    let y     = startY - PLATFORM_SPACING;
+
     while (y > -innerHeight) {
-      const prev = platforms[platforms.length - 1];
-      const r = Math.random();
-      let type = 1;
-      if (r < 0.15 && score > 5000) type = 3;
-      else if (r < 0.3 && score > 2000) type = 2;
+      // a) tirage du type (mobile/rebond selon score)
+      const r    = Math.random();
+      let   type = 1;
+      if (r < 0.15 && score > 5000)      type = 3;
+      else if (r < 0.3  && score > 2000) type = 2;
 
-      let nx = prev.x + (Math.random() * 2 - 1) * maxHorz;
-      nx = Math.max(0, Math.min(innerWidth - P_W, nx));
+      // b) calcul de nx **depuis prevX** sur la plage sécurisée
+      let nx = prevX + (Math.random() * 2 - 1) * horizRange;
+      nx     = Math.max(0, Math.min(innerWidth - P_W, nx));
 
+      // c) ajout de la plateforme
       platforms.push(makePlat(nx, y, type));
+
+      // d) mise à jour de prevX pour la prochaine itération
+      prevX = nx;
+
+      // e) descendre à la ligne suivante
       y -= PLATFORM_SPACING;
     }
   }
+
+
 
   initPlatforms();
 
@@ -361,6 +619,7 @@ function launchDoodle() {
     initPlatforms();
     jetpack = null;
     jetpackActive = false;
+    jetpackReady  = false; 
     particles = [];
     goScreen.style.display = 'none';
     requestAnimationFrame(loop);
@@ -375,8 +634,27 @@ function launchDoodle() {
     const dt = (ts - lastTime) / 1000;
     lastTime = ts;
 
+    // ——— Niveau, difficulté et probabilités dynamiques ———
+    const level       = getLevel(score);                                     // +1 niveau tous les 1000 pts
+    const difficulty  = 1 + level * 0.05;                                     // +5% de challenge par niveau
+    const movingSpeed = BASE_MOVING_SPEED * difficulty;
+
+    const mobileProb = Math.min(
+      BASE_MOB_PROB  + level * MOB_PROB_INCR,
+      MAX_MOB_PROB
+    );
+
+    const bounceProb = BASE_BOUNCE_PROB;  // ou dynamique : Math.min(BASE_BOUNCE_PROB + level*BOUNCE_PROB_INCR, MAX_BOUNCE_PROB)
+
+    const trapProb = Math.min(
+      BASE_TRAP_PROB + level * TRAP_PROB_INCR,
+      MAX_TRAP_PROB
+    );
+
+    // ——— Déplacement du joueur ———
     player.vx = (left ? -H_SPEED : 0) + (right ? H_SPEED : 0);
-    player.x = Math.max(0, Math.min(innerWidth - player.w, player.x + player.vx * dt));
+    player.x  = Math.max(0, Math.min(innerWidth - player.w, player.x + player.vx * dt));
+
 
     if (left) player.facing = 'left';
     else if (right) player.facing = 'right';
@@ -396,6 +674,21 @@ function launchDoodle() {
     }
 
     player.y += player.vy * dt;
+    // 🚀 apparition instantanée du jetpack à 10 000 pts
+    if (!jetpackReady && score >= 10000) {
+      jetpackReady = true;
+      const visible = platforms.filter(p =>
+        p.y > 0 && p.y < innerHeight - 50
+      );
+      if (visible.length) {
+        const p = visible[Math.floor(Math.random() * visible.length)];
+        jetpack = {
+          x: p.x + p.w/2 - 15,
+          y: p.y - PLATFORM_SPACING * 4
+        };
+      }
+    }
+
 
     if (player.y < innerHeight / 3) {
       const dy = innerHeight / 3 - player.y;
@@ -407,18 +700,23 @@ function launchDoodle() {
 
     if (player.vy > 0) {
       for (const p of platforms) {
+        // 1) on ignore les plateformes pièges (type 4)
+        if (p.type === 4) continue;
+
+        // 2) on teste la collision comme avant
         if (
           player.x + player.w > p.x &&
           player.x < p.x + p.w &&
           player.y + player.h > p.y &&
           player.y + player.h - player.vy * dt < p.y
         ) {
+          // 3) rebond sur jaune ou normal
           if (p.type === 2) {
             player.vy = -HIGH_BOUNCE;
-            playSfx('yellow'); // ✅ son plateforme jaune
+            playSfx('yellow');
           } else {
             player.vy = -JUMP_SPEED;
-            playSfx('jump'); // ✅ son normal
+            playSfx('jump');
           }
           break;
         }
@@ -426,18 +724,23 @@ function launchDoodle() {
     }
 
 
+
     platforms.forEach(p => {
       if (p.type === 3) {
-        p.x += p.vx * dt;
-        if (p.x <= 0 || p.x + p.w >= innerWidth) p.vx *= -1;
+   // On déplace selon la direction stockée dans p.vx et la vitesse calculée
+   const dir = Math.sign(p.vx);           // +1 ou -1
+   p.x += dir * movingSpeed * dt;
+   if (p.x <= 0 || p.x + p.w >= innerWidth) p.vx *= -1;
       }
     });
+
 
     if (jetpack &&
       player.x + player.w > jetpack.x &&
       player.x < jetpack.x + 30 &&
       player.y + player.h > jetpack.y &&
       player.y < jetpack.y + 30) {
+      playSfx('jetpack');      // ← son à la prise
       jetpackActive = true;
       jetpackTimer = JETPACK_DURATION;
       playSfx('jetpack');
@@ -451,16 +754,65 @@ function launchDoodle() {
       jetpack = null;
     }
 
+    // ─── Génération des plateformes ───
+    // 0) point de départ : centre écran
+    let prevX = innerWidth/2 - P_W/2;
+    // 50% de la portée max, pour moins d’extrêmes
+    const horizRange = maxHorz * 0.5;
+
     while (platforms.length < 12) {
+      // 1) hauteur de la nouvelle rangée
       const topY = Math.min(...platforms.map(p => p.y));
-      const prevX = platforms.find(p => p.y === topY).x;
-      let nx = prevX + (Math.random() * 2 - 1) * maxHorz;
+
+      // 2) tirer un nx atteignable depuis prevX
+      let nx = prevX + (Math.random()*2 - 1) * horizRange;
       nx = Math.max(0, Math.min(innerWidth - P_W, nx));
-      let type = 1;
+
+      // 3) choisir le type
       const r = Math.random();
-      if (r < 0.15 && score > 5000) type = 3;
-      else if (r < 0.3 && score > 2000) type = 2;
+      let type;
+      if      (r < mobileProb)                             type = 3;
+      else if (r < mobileProb + bounceProb)                type = 2;
+      else if (r < mobileProb + bounceProb + trapProb)     type = 4;
+      else                                                 type = 1;
+
+      // 4) créer la plateforme principale
       platforms.push(makePlat(nx, topY - PLATFORM_SPACING, type));
+
+      // 5) si piège, générer 1 secours et mettre prevX = safeX
+      if (type === 4) {
+
+        // on veut au moins 50% de la plage ou P_W+10, mais jamais plus que horizRange
+        const fallbackOffset = Math.min(
+          horizRange,
+          Math.max(horizRange * 0.5, P_W + 10)
+        );
+
+
+        // deux candidats décalés, clampés à l'écran
+        const candidateXs = [
+          nx + fallbackOffset,
+          nx - fallbackOffset
+        ]
+        .map(x => Math.max(0, Math.min(innerWidth - P_W, x)))
+        // on ne garde que ceux réellement éloignés de nx
+        .filter(x => Math.abs(x - nx) >= fallbackOffset);
+
+        // on choisit un safeX valide, ou on fallback vers l'autre côté
+        const safeX = candidateXs.length
+          ? candidateXs[Math.floor(Math.random() * candidateXs.length)]
+          : (
+              nx > innerWidth / 2
+                ? Math.max(0, nx - fallbackOffset)
+                : Math.min(innerWidth - P_W, nx + fallbackOffset)
+            );
+
+        platforms.push(makePlat(safeX, topY - PLATFORM_SPACING, 1));
+        prevX = safeX;  // la prochaine rangée part de la plateforme fi able
+      } else {
+        prevX = nx;     // sinon on part de la plateforme normale
+      }
+
     }
 
     if (player.y > innerHeight) return showGameOver(score);
@@ -470,9 +822,10 @@ function launchDoodle() {
 
     platforms.forEach(p => {
       ctxDJ.fillStyle =
-        p.type === 2 ? '#FFD700' :
-        p.type === 3 ? '#2288FF' :
-                       '#654321';
+         p.type === 4 ? '#E74C3C' :  // piège en rouge
+          p.type === 3 ? '#2288FF' :  // mobile (bleue)
+          p.type === 2 ? '#FFD700' :  // rebond (jaune)
+                         '#654321';   // classique (marron)
       ctxDJ.fillRect(p.x, p.y, p.w, p.h);
 
       if (
@@ -518,6 +871,10 @@ function launchDoodle() {
     ctxDJ.fillStyle = '#000';
     ctxDJ.font = '20px sans-serif';
     ctxDJ.fillText(`Score: ${Math.floor(score)}`, 10, 30);
+    // affichage du niveau sous le score
+    ctxDJ.font     = '16px sans-serif';          // un peu plus petit que le score
+    ctxDJ.fillText(`Niveau: ${level}`, 10, 55);  // 55px pour être en dessous
+
 
     requestAnimationFrame(loop);
   }
@@ -549,9 +906,6 @@ function showTab(tab) {
   if(tab==='badges'){
     renderBadges();
   }
-  if(tab==='todo'){
-    renderTodos();
-  }
   if(tab==='game'){
     startScreen.classList.remove('hidden');
   }
@@ -566,7 +920,7 @@ startBtn.addEventListener('click', () => {
 
 // ─── Reset app ─────────────────────────────────────────────────
 resetBtn.addEventListener('click', () => {
-  ['scratchLog','lastScratchDate','xpTotal','pseudo','scratchCount','tasksDone','bestScore']
+  ['scratchLog','lastScratchDate','xpTotal','pseudo','scratchCount','bestScore']
     .forEach(k => localStorage.removeItem(k));
   checkPseudo();
   showTab('profile');
@@ -735,73 +1089,6 @@ function renderBadges() {
   }
 }
 
-// ─── ToDo & taskDone ───────────────────────────────────────────
-function getTodos() {
-  return JSON.parse(localStorage.getItem('todos') || '[]');
-}
-
-function saveTodos(arr) {
-  localStorage.setItem('todos', JSON.stringify(arr));
-}
-
-function renderTodos() {
-  todoList.innerHTML = '';
-  getTodos().forEach((text, idx) => {
-    const li = document.createElement('li');
-    const span = document.createElement('span');
-    span.className = 'todo-text';
-    span.textContent = text;
-
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-
-    cb.addEventListener('change', () => {
-      // 1) Jouer son + animation
-      playSfx('taskDone');
-      taskDoneContainer.style.display = 'flex';
-      taskDoneAnim.goToAndPlay(0, true);
-
-      // 2) Mettre à jour le compteur global
-      const doneCnt = parseInt(localStorage.getItem('tasksDone') || '0', 10) + 1;
-      localStorage.setItem('tasksDone', doneCnt.toString());
-
-      // 3) Award XP
-      const xpTotal = parseInt(localStorage.getItem('xpTotal') || '0', 10) + 10;
-      localStorage.setItem('xpTotal', xpTotal.toString());
-
-      // 4) Après la fin de l’anim, enlever la tâche et rafraîchir
-      setTimeout(() => {
-        // 1) mettre à jour le compteur « Tâches effectuées »
-        updateProfileStats();
-        // 2) mettre à jour la barre XP
-        updateXP();  // <-- ici, utilise la fonction existante updateXP()
-
-        // 3) retirer la tâche cochée et rafraîchir la liste
-        const remaining = getTodos().filter((_, j) => j !== idx);
-        saveTodos(remaining);
-        renderTodos();
-      }, 500);
-
-    });
-
-    li.append(span, cb);
-    todoList.appendChild(li);
-  });
-}
-
-todoAddBtn.addEventListener('click', () => {
-  const v = todoIn.value.trim();
-  if (!v) return;
-  playSfx('createTask');
-  const arr = getTodos();
-  arr.unshift(v);
-  saveTodos(arr);
-  todoIn.value = '';
-  renderTodos();
-});
-
-
-
 // ─── Service Worker & init ─────────────────────────────────────
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(console.error);
@@ -809,6 +1096,14 @@ if('serviceWorker' in navigator){
 document.addEventListener('DOMContentLoaded',()=>{
   checkPseudo();
   initScratch();
-  renderTodos();
+  initTamagochi();
   showTab('profile');
+});
+
+// Touche A = Reset complet (tests)
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'a') {
+    localStorage.clear();
+    location.reload();
+  }
 });
