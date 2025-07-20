@@ -49,6 +49,7 @@ function initTamagochi() {
   const happinessBar  = document.getElementById('happiness-bar');
   const stressBar     = document.getElementById('stress-bar');
   const btnEditSteps  = document.getElementById('btn-edit-steps');
+  const btnCorrectSteps  = document.getElementById('btn-correct-steps');
   const stepsBarFill  = document.getElementById('steps-bar-fill');
   const btns = {
     multivit:  document.getElementById('btn-multivit'),
@@ -148,21 +149,36 @@ function initTamagochi() {
     stressBar.style.width    = `${Math.max(0,sp)}%`;
 
     if (state.steps !== null) {
-      btnEditSteps.textContent = `${state.steps} pas`;
-      btnEditSteps.disabled    = true;
-      stepsBarFill.style.width = `${Math.min(state.steps/STEPS_GOAL,1)*100}%`;
+      // on a déjà saisi des pas aujourd'hui
+      btnEditSteps.textContent    = `${state.steps} pas`;
+      btnEditSteps.disabled       = true;
+      btnCorrectSteps.style.display = 'block';       // le bouton corriger apparaît
+      stepsBarFill.style.width    = `${Math.min(state.steps/STEPS_GOAL,1)*100}%`;
     } else {
-      btnEditSteps.innerHTML   = '<i class="fas fa-walking"></i> Pas du jour';
-      btnEditSteps.disabled    = false;
-      stepsBarFill.style.width = '0%';
+      // pas encore saisi aujourd'hui
+      btnEditSteps.innerHTML      = '<i class="fas fa-walking"></i> Pas du jour';
+      btnEditSteps.disabled       = false;
+      btnCorrectSteps.style.display = 'none';        // on cache corriger
+      stepsBarFill.style.width    = '0%';
     }
+
 
     for (let k in btns) {
       btns[k].disabled = state.taken[k] >= MAX_TAKES[k];
     }
   }
 
-  // --- Handlers ---
+  // ─── Handler pour les compléments ─────────────────────────────
+  function handleSupplement(key) {
+    if (state.taken[key] < MAX_TAKES[key]) {
+      state.taken[key]++;
+      computeHealth();
+      updateUI();
+      saveState();
+    }
+  }
+  
+  // ─── Handlers ────────────────────────────────────────────────
   function handleEditSteps() {
     const v = parseInt(prompt("Combien de pas as-tu fait aujourd'hui ?",""), 10);
     if (!isNaN(v) && v >= 0) {
@@ -174,11 +190,11 @@ function initTamagochi() {
       localStorage.setItem('totalSteps', newTotal);
 
       // 2) Calcul des paliers de 10 000 franchis
-      const prevThresholds = Math.floor(prevTotal / 10000);
-      const newThresholds  = Math.floor(newTotal  / 10000);
-      const crossed        = newThresholds - prevThresholds;
+      const prevThresh = Math.floor(prevTotal / 10000);
+      const newThresh  = Math.floor(newTotal  / 10000);
+      const crossed    = newThresh - prevThresh;
 
-      // 3) Ajouter 20 XP par palier franchi
+      // 3) Ajouter 20 XP par palier franchi
       if (crossed > 0) {
         const xpOld = parseInt(localStorage.getItem('xpTotal') || '0', 10);
         const xpNew = xpOld + crossed * 20;
@@ -189,32 +205,56 @@ function initTamagochi() {
       // 4) Mettre à jour santé et UI
       computeHealth();
       updateUI();
+      updateProfileStats();
       saveState();
-    }
-  }
-  // ─── Nouveau : handler pour les compléments ───
-  function handleSupplement(key) {
-    if (state.taken[key] < MAX_TAKES[key]) {
-      state.taken[key]++;
-      computeHealth();
-      updateUI();
-      saveState();
+    } else {
+      alert("Valeur invalide. Entrez un nombre positif.");
     }
   }
 
-  // ─── Init final ───
+  function handleCorrectSteps() {
+    // 1) Récupère l'ancienne valeur (0 si jamais saisi)
+    const oldSteps = state.steps || 0;
+
+    // 2) Demande la nouvelle valeur
+    const input = prompt("Corriger le nombre de pas du jour :", oldSteps);
+    const newSteps = parseInt(input, 10);
+
+    if (!isNaN(newSteps) && newSteps >= 0) {
+      // 3) Ajuste le total cumulé dans localStorage
+      const totalPrev = parseInt(localStorage.getItem('totalSteps') || '0', 10);
+      const totalNew  = totalPrev - oldSteps + newSteps;
+      localStorage.setItem('totalSteps', totalNew);
+
+      // 4) Mets à jour l'état et sauvegarde Tamagochi
+      state.steps = newSteps;
+      saveState();
+
+      // 5) Rafraîchis l'UI Tamagochi et la carte Profil
+      computeHealth();
+      updateUI();
+      updateProfileStats();
+    } else {
+      alert("Valeur invalide. Entrez un nombre positif.");
+    }
+  }
+
+
+  // ─── Init final ──────────────────────────────────────────────
   loadState();
   resetIfNewDay();
   computeHealth();
   updateUI();
 
-  // ─── Brancher les événements sur les boutons ───
-  btnEditSteps.addEventListener('click', handleEditSteps);
-  btns.multivit .addEventListener('click', () => handleSupplement('multivit'));
-  btns.magnesium.addEventListener('click', () => handleSupplement('magnesium'));
-  btns.vitD      .addEventListener('click', () => handleSupplement('vitD'));
-  btns.iode      .addEventListener('click', () => handleSupplement('iode'));
+  // ─── Brancher les événements sur les boutons ─────────────────
+  btnEditSteps     .addEventListener('click', handleEditSteps);
+  btnCorrectSteps  .addEventListener('click', handleCorrectSteps);
+  btns.multivit    .addEventListener('click', () => handleSupplement('multivit'));
+  btns.magnesium   .addEventListener('click', () => handleSupplement('magnesium'));
+  btns.vitD        .addEventListener('click', () => handleSupplement('vitD'));
+  btns.iode        .addEventListener('click', () => handleSupplement('iode'));
 }
+
 
 // ─── Dans showTab(tab) ─────────────────────────────────────────
 function showTab(tab) {
@@ -351,6 +391,8 @@ const levelDisp   = document.getElementById('level-display');
 const xpBar       = document.getElementById('xp-bar');
 const xpText      = document.getElementById('xp-text');
 const bestScoreP  = document.getElementById('best-score');
+const btnCorrectSteps = document.getElementById('btn-correct-steps');
+
 
 const scratchImg  = document.getElementById('scratch-image');
 const scratchArea = document.getElementById('scratch-area');

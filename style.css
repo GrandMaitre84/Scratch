@@ -778,6 +778,48 @@ img, button {
   max-width: 100%;
 }
 
+/* === Steps Card === */
+#steps-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#btn-edit-steps {
+  width: 100%;
+  max-width: 200px;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  background: var(--primary-color);
+  color: #fff;
+  cursor: pointer;
+}
+
+.secondary-button {
+  width: auto;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9em;
+  border: none;
+  border-radius: 4px;
+  background: var(--secondary-color);
+  color: #fff;
+  cursor: pointer;
+  transition: transform .15s;
+}
+.secondary-button:hover {
+  transform: translateY(-2px);
+}
+
+/* Variables pour les couleurs */
+:root {
+  --primary-color: #28a745;
+  --secondary-color: #007bff;
+}
+
+
 /* Responsive pour écrans étroits (ex. iPhone 12) */
 @media (max-width: 400px) {
   #main-area {
@@ -794,4 +836,39 @@ img, button {
   #pet-card img {
     max-height: 80vh;
   }
+}
+
+/* rend les deux boutons 100% largeur et centre leur contenu */
+#steps-card > button {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin: 0.5rem 0;
+  padding: 0.6rem;
+  font-size: 0.9em;
+}
+
+/* on masque par défaut “Corriger les pas”,
+   ton JS fera btnCorrectSteps.style.display = 'block' quand nécessaire */
+#btn-correct-steps {
+  display: none;
+}
+
+/* Responsive pour écrans étroits (ex. iPhone 12) */
+@media (max-width: 400px) {
+  #main-area {
+    grid-template-columns: auto 1fr auto;
+    gap: .25rem;
+  }
+  .supplement-btn {
+    padding: .4rem;
+    font-size: .7rem;
+  }
+  .supplement-btn .supp-label {
+    font-size: .6rem;
+  }
+  #pet-card img {
+    max-height: 80vh;
+  }
+  
 }
