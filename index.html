@@ -27,7 +27,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="style.css?v=0.1.9"/>
+  <link rel="stylesheet" href="style.css?v=0.2.0"/>
 </head>
 <body>
   <!-- conteneur d’intro Lottie -->
@@ -88,7 +88,7 @@
         <button id="pseudo-btn">Valider</button>
       </div>
       <button id="reset-btn">Réinitialiser l’app</button>
-      <div id="app-version">App v0.1.9 (19/07/2025)</div>
+      <div id="app-version">App v0.2.0 (21/07/2025)</div>
     </div>
 
     <!-- PLAY -->
@@ -201,18 +201,35 @@
             </div>
           </section>
 
-        <!-- 5. Pas du jour (simple bouton + jauge) -->
-        <section id="steps-card" class="card">
-          <button id="btn-edit-steps">
-            <i class="fas fa-walking"></i> Pas du jour
-          </button>
-          <button id="btn-correct-steps" class="secondary-button">
-            <i class="fas fa-pen"></i> Corriger les pas
-          </button>
-          <div class="bar-bg small">
-            <div class="bar-fill" id="steps-bar-fill"></div>
-          </div>
-        </section>
+          <!-- 5. Pas du jour (simple bouton + jauge) -->
+          <section id="steps-card" class="card">
+            <button id="btn-edit-steps">
+              <i class="fas fa-walking"></i> Pas du jour
+            </button>
+            <button id="btn-correct-steps"
+                    class="secondary-button"
+                    style="display: none; margin-top: 6px; font-size: 0.9em;">
+              <i class="fas fa-pen"></i> Corriger les pas
+            </button>
+            <div class="bar-bg small">
+              <div class="bar-fill" id="steps-bar-fill" style="position: relative;">
+                <span id="steps-text"
+                      style="
+                        position: absolute;
+                        top: 0; left: 0;
+                        width: 100%;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 0.9em;
+                        color: #000;
+                      "></span>
+              </div>
+            </div>
+          </section>
+
+
 
       </div>
     </section>
@@ -246,6 +263,6 @@
   <!-- Scripts -->
   <script src="https://unpkg.com/lottie-web@latest/build/player/lottie.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
-  <script src="script.js?v=0.1.9"></script>
+  <script src="script.js?v=0.2.0"></script>
 </body>
 </html>

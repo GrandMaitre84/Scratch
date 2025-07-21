@@ -51,6 +51,8 @@ function initTamagochi() {
   const btnEditSteps  = document.getElementById('btn-edit-steps');
   const btnCorrectSteps  = document.getElementById('btn-correct-steps');
   const stepsBarFill  = document.getElementById('steps-bar-fill');
+  const stepsText        = document.getElementById('steps-text');
+
   const btns = {
     multivit:  document.getElementById('btn-multivit'),
     magnesium: document.getElementById('btn-magnesium'),
@@ -149,18 +151,24 @@ function initTamagochi() {
     stressBar.style.width    = `${Math.max(0,sp)}%`;
 
     if (state.steps !== null) {
-      // on a déjà saisi des pas aujourd'hui
-      btnEditSteps.textContent    = `${state.steps} pas`;
-      btnEditSteps.disabled       = true;
-      btnCorrectSteps.style.display = 'block';       // le bouton corriger apparaît
-      stepsBarFill.style.width    = `${Math.min(state.steps/STEPS_GOAL,1)*100}%`;
+      // on a déjà saisi des pas aujourd'hui :
+      btnEditSteps.style.display    = 'none';     // ← cache complètement le bouton
+      btnCorrectSteps.style.display = 'block';
+
+      // 1) largeur de la barre
+      const barPct = Math.min(state.steps / STEPS_GOAL, 1) * 100;
+      stepsBarFill.style.width      = `${barPct}%`;
+
+      // 2) nombre affiché au centre de la barre
+      stepsText.textContent         = `${state.steps}/${STEPS_GOAL}`;
     } else {
-      // pas encore saisi aujourd'hui
-      btnEditSteps.innerHTML      = '<i class="fas fa-walking"></i> Pas du jour';
-      btnEditSteps.disabled       = false;
-      btnCorrectSteps.style.display = 'none';        // on cache corriger
-      stepsBarFill.style.width    = '0%';
+      // pas encore saisi aujourd'hui :
+      btnEditSteps.style.display    = 'block';    // ← ré-affiche le bouton à minuit
+      btnCorrectSteps.style.display = 'none';
+      stepsBarFill.style.width      = '0%';
+      stepsText.textContent         = '';
     }
+
 
 
     for (let k in btns) {
@@ -170,6 +178,10 @@ function initTamagochi() {
 
   // ─── Handler pour les compléments ─────────────────────────────
   function handleSupplement(key) {
+    // 0) jouer le son de tab-click
+    playSfx('tab');
+
+    // 1) si on n’a pas déjà atteint le maximum
     if (state.taken[key] < MAX_TAKES[key]) {
       state.taken[key]++;
       computeHealth();
@@ -177,9 +189,11 @@ function initTamagochi() {
       saveState();
     }
   }
+
   
   // ─── Handlers ────────────────────────────────────────────────
   function handleEditSteps() {
+    playSfx('tab');  // son au clic
     const v = parseInt(prompt("Combien de pas as-tu fait aujourd'hui ?",""), 10);
     if (!isNaN(v) && v >= 0) {
       state.steps = v;
@@ -199,13 +213,13 @@ function initTamagochi() {
         const xpOld = parseInt(localStorage.getItem('xpTotal') || '0', 10);
         const xpNew = xpOld + crossed * 20;
         localStorage.setItem('xpTotal', xpNew.toString());
-        updateXP();
       }
 
       // 4) Mettre à jour santé et UI
       computeHealth();
       updateUI();
-      updateProfileStats();
+      updateProfileStats();  // met à jour total-steps sur le profil
+      updateXP();            // met à jour xp-bar & Level of Love
       saveState();
     } else {
       alert("Valeur invalide. Entrez un nombre positif.");
@@ -213,11 +227,12 @@ function initTamagochi() {
   }
 
   function handleCorrectSteps() {
+    playSfx('tab');  // son au clic
     // 1) Récupère l'ancienne valeur (0 si jamais saisi)
     const oldSteps = state.steps || 0;
 
     // 2) Demande la nouvelle valeur
-    const input = prompt("Corriger le nombre de pas du jour :", oldSteps);
+    const input    = prompt("Corriger le nombre de pas du jour :", oldSteps);
     const newSteps = parseInt(input, 10);
 
     if (!isNaN(newSteps) && newSteps >= 0) {
@@ -226,18 +241,35 @@ function initTamagochi() {
       const totalNew  = totalPrev - oldSteps + newSteps;
       localStorage.setItem('totalSteps', totalNew);
 
-      // 4) Mets à jour l'état et sauvegarde Tamagochi
+      // 4) Calcule le delta de paliers franchis (10 000 pas)
+      const prevThresh = Math.floor(totalPrev / 10000);
+      const newThresh  = Math.floor(totalNew  / 10000);
+      const crossed    = newThresh - prevThresh;
+
+      // 5) Ajuste l'XP en conséquence
+      if (crossed !== 0) {
+        const xpOld = parseInt(localStorage.getItem('xpTotal') || '0', 10);
+        const xpNew = xpOld + crossed * 20;
+        localStorage.setItem('xpTotal', xpNew.toString());
+      }
+
+      // 6) Mets à jour l’état et sauvegarde Tamagochi
       state.steps = newSteps;
       saveState();
 
-      // 5) Rafraîchis l'UI Tamagochi et la carte Profil
+      // 7) Rafraîchis l’UI Tamagochi
       computeHealth();
       updateUI();
-      updateProfileStats();
+
+      // 8) Rafraîchis la carte Profil
+      updateProfileStats();  // met à jour total-steps
+      updateXP();            // met à jour xp-bar & Level of Love
     } else {
       alert("Valeur invalide. Entrez un nombre positif.");
     }
   }
+
+
 
 
   // ─── Init final ──────────────────────────────────────────────
@@ -258,14 +290,25 @@ function initTamagochi() {
 
 // ─── Dans showTab(tab) ─────────────────────────────────────────
 function showTab(tab) {
+  // Masquer toutes les vues et désactiver tous les onglets
   Object.values(views).forEach(v => v.classList.remove('active'));
   Object.values(tabs).forEach(b => b.classList.remove('active'));
+
+  // Activer la vue et l’onglet sélectionnés
   views[tab].classList.add('active');
   tabs[tab].classList.add('active');
+
+  // Son de changement d’onglet
   playSfx('tab');
 
-  if (tab === 'tamagochi') initTamagochi();
-}
+  if (tab === 'tamagochi') {
+    initTamagochi();    // initialisation (fait rien après la 1ʳᵉ fois)
+    resetIfNewDay();    // reset quotidien si nouveau jour
+    computeHealth();    // recalcule la santé d’après l’état
+    updateUI();         // met à jour l’affichage (cache/réaffiche le bouton Pas du jour)
+  }
+}  // ← fermeture de la fonction showTab
+
 
 const SFX_FILES = {
   tab:        'sounds/tab-click.mp3',
@@ -509,7 +552,7 @@ function launchDoodle() {
   const BASE_MOB_PROB  = 0.15;
   const MOB_PROB_INCR  = 0.01;
   const MAX_MOB_PROB   = 0.5;
-  const BASE_BOUNCE_PROB = 0.10;
+  const BASE_BOUNCE_PROB = 0.05;
   
   // ─── Nouveaux paramètres piège ───
   const BASE_TRAP_PROB   = 0.10;  // 10 % de plateformes piège au niveau 0
@@ -686,11 +729,20 @@ function launchDoodle() {
       MAX_MOB_PROB
     );
 
-    const bounceProb = BASE_BOUNCE_PROB;  // ou dynamique : Math.min(BASE_BOUNCE_PROB + level*BOUNCE_PROB_INCR, MAX_BOUNCE_PROB)
+    const bounceProb = BASE_BOUNCE_PROB;  // ou dynamique si tu veux
 
     const trapProb = Math.min(
       BASE_TRAP_PROB + level * TRAP_PROB_INCR,
       MAX_TRAP_PROB
+    );
+
+    // ─── Paramètres pour la plateforme “disparaisse” ───
+    const BASE_VANISH_PROB = 0.05;    // 5 % de chance au niveau 0
+    const VANISH_PROB_INCR = 0.005;   // +0.5 % par niveau
+    const MAX_VANISH_PROB  = 0.20;    // jamais plus de 20 %
+    const vanishProb = Math.min(
+      BASE_VANISH_PROB + level * VANISH_PROB_INCR,
+      MAX_VANISH_PROB
     );
 
     // ——— Déplacement du joueur ———
@@ -741,22 +793,33 @@ function launchDoodle() {
     }
 
     if (player.vy > 0) {
-      for (const p of platforms) {
-        // 1) on ignore les plateformes pièges (type 4)
+      // on parcourt par index pour pouvoir recycler la plateforme
+      for (let i = platforms.length - 1; i >= 0; i--) {
+        const p = platforms[i];
+        // 1) ignorer les pièges
         if (p.type === 4) continue;
 
-        // 2) on teste la collision comme avant
+        // 2) test de collision
         if (
           player.x + player.w > p.x &&
           player.x < p.x + p.w &&
           player.y + player.h > p.y &&
           player.y + player.h - player.vy * dt < p.y
         ) {
-          // 3) rebond sur jaune ou normal
-          if (p.type === 2) {
+          // 3) rebond selon le type
+          if (p.type === 5) {
+            // vanish : rebond normal puis disparition
+            player.vy = -JUMP_SPEED;
+            playSfx('jump');
+            recycle(i);
+          }
+          else if (p.type === 2) {
+            // rebond jaune
             player.vy = -HIGH_BOUNCE;
             playSfx('yellow');
-          } else {
+          }
+          else {
+            // plateforme classique ou mobile
             player.vy = -JUMP_SPEED;
             playSfx('jump');
           }
@@ -764,6 +827,7 @@ function launchDoodle() {
         }
       }
     }
+
 
 
 
@@ -810,13 +874,15 @@ function launchDoodle() {
       let nx = prevX + (Math.random()*2 - 1) * horizRange;
       nx = Math.max(0, Math.min(innerWidth - P_W, nx));
 
-      // 3) choisir le type
+      // 3) choisir le type (mobile, rebond, piège, vanish, classique)
       const r = Math.random();
       let type;
-      if      (r < mobileProb)                             type = 3;
-      else if (r < mobileProb + bounceProb)                type = 2;
-      else if (r < mobileProb + bounceProb + trapProb)     type = 4;
-      else                                                 type = 1;
+      if      (r < mobileProb)                                            type = 3; // mobile (bleue)
+      else if (r < mobileProb + bounceProb)                               type = 2; // rebond (jaune)
+      else if (r < mobileProb + bounceProb + trapProb)                    type = 4; // piège (rouge)
+      else if (r < mobileProb + bounceProb + trapProb + vanishProb)       type = 5; // vanish (violet)
+      else                                                                 type = 1; // classique (marron)
+
 
       // 4) créer la plateforme principale
       platforms.push(makePlat(nx, topY - PLATFORM_SPACING, type));
@@ -865,9 +931,10 @@ function launchDoodle() {
     platforms.forEach(p => {
       ctxDJ.fillStyle =
          p.type === 4 ? '#E74C3C' :  // piège en rouge
-          p.type === 3 ? '#2288FF' :  // mobile (bleue)
-          p.type === 2 ? '#FFD700' :  // rebond (jaune)
-                         '#654321';   // classique (marron)
+         p.type === 5 ? '#9B59B6' :  // vanish en violet
+         p.type === 3 ? '#2288FF' :  // mobile (bleue)
+         p.type === 2 ? '#FFD700' :  // rebond (jaune)
+                        '#654321';   // classique (marron)
       ctxDJ.fillRect(p.x, p.y, p.w, p.h);
 
       if (
