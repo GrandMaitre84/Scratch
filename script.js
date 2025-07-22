@@ -1007,36 +1007,52 @@ function launchDoodle() {
 
 // ─── Tab navigation ────────────────────────────────────────────
 function showTab(tab) {
+  // 1) Masquer toutes les vues et désactiver tous les onglets
   Object.values(views).forEach(v => v.classList.remove('active'));
   Object.values(tabs).forEach(b => b.classList.remove('active'));
+
+  // 2) Activer la vue et l’onglet sélectionnés
   views[tab].classList.add('active');
   tabs[tab].classList.add('active');
+
+  // 3) Son de changement d’onglet
   playSfx('tab');
 
-  if(tab==='profile'){
+  // 4) Cas par cas
+  if (tab === 'profile') {
     checkPseudo();
     updateBestScore();
     updateProfileStats();
     updateXP();
   }
-  if(tab==='play'){
+  else if (tab === 'play') {
     scratchImg.src = `images/${currentCard}.webp`;
     checkDailyScratch();
     initScratch();
   }
-  if (tab === 'game') {
-    startScreen.classList.remove('hidden');
-
-    // ─── Bloque tout scroll/touchmove dans la vue Game ───
-    const gameView = document.getElementById('view-game');
-    gameView.ontouchmove = e => e.preventDefault();
+  else if (tab === 'badges') {
+    renderBadges();
   }
-
-  if(tab==='game'){
+  else if (tab === 'game') {
     startScreen.classList.remove('hidden');
+    // Bloque tout scroll/touchmove dans la vue Game
+    document
+      .getElementById('view-game')
+      .addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+  }
+  else if (tab === 'tamagochi') {
+    initTamagochi();
+    resetIfNewDay();
+    computeHealth();
+    updateUI();
   }
 }
-Object.keys(tabs).forEach(tab => tabs[tab].addEventListener('click', ()=>showTab(tab)));
+
+// 5) Rattacher l’événement à chaque onglet
+Object.keys(tabs).forEach(tab =>
+  tabs[tab].addEventListener('click', () => showTab(tab))
+);
+
 
 // ─── Start Game button ─────────────────────────────────────────
 startBtn.addEventListener('click', () => {
