@@ -1,4 +1,4 @@
-const CACHE_NAME = 'scratchmouse-v11';  // incrémente à chaque déploiement
+const CACHE_NAME = 'scratchmouse-v12';  // incrémente à chaque déploiement
 const ASSETS = [
   '/index.html',
   '/style.css?v=0.1.8',
