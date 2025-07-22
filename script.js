@@ -833,12 +833,24 @@ function launchDoodle() {
 
     platforms.forEach(p => {
       if (p.type === 3) {
-   // On déplace selon la direction stockée dans p.vx et la vitesse calculée
-   const dir = Math.sign(p.vx);           // +1 ou -1
-   p.x += dir * movingSpeed * dt;
-   if (p.x <= 0 || p.x + p.w >= innerWidth) p.vx *= -1;
+        // — Remplacement complet de la logique de déplacement mobile — 
+
+        // 1) Déplacer selon p.vx (-1 ou +1)
+        p.x += p.vx * movingSpeed * dt;
+
+        // 2) Si on dépasse à gauche, recarder et repartir vers la droite
+        if (p.x < 0) {
+          p.x  = 0;
+          p.vx =  1;
+        }
+        // 3) Si on dépasse à droite, recarder et repartir vers la gauche
+        else if (p.x + p.w > innerWidth) {
+          p.x  = innerWidth - p.w;
+          p.vx = -1;
+        }
       }
     });
+
 
 
     if (jetpack &&
@@ -1012,9 +1024,14 @@ function showTab(tab) {
     checkDailyScratch();
     initScratch();
   }
-  if(tab==='badges'){
-    renderBadges();
+  if (tab === 'game') {
+    startScreen.classList.remove('hidden');
+
+    // ─── Bloque tout scroll/touchmove dans la vue Game ───
+    const gameView = document.getElementById('view-game');
+    gameView.ontouchmove = e => e.preventDefault();
   }
+
   if(tab==='game'){
     startScreen.classList.remove('hidden');
   }

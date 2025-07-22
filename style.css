@@ -870,5 +870,19 @@ img, button {
   #pet-card img {
     max-height: 80vh;
   }
-  
+
+  /* ─── Stop scroll/overscroll sur l’onglet GAME ────────────────── */
+  #view-game {
+    position: relative;       /* pour contenir le canvas */
+    overflow: hidden;         /* on bloque tout scroll interne */
+    overscroll-behavior: none;/* stoppe le “rubber‑band” */
+    touch-action: none;       /* désactive le scroll/pinch sur mobile */
+  }
+
+  #view-game canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
 }
