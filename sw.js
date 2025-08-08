@@ -1,4 +1,4 @@
-const CACHE_NAME = 'scratchmouse-v12';  // incrémente à chaque déploiement
+const CACHE_NAME = 'scratchmouse-v13';  // incrémente à chaque déploiement
 const ASSETS = [
   '/index.html',
   '/style.css?v=0.1.8',
@@ -48,6 +48,7 @@ const ASSETS = [
   '/images/card33.webp',
   '/images/card34.webp',
   '/images/card35.webp',
+  '/images/card36.webp',
   // badges en PNG
   '/images/badge1.png',
   '/images/badge4.png',
