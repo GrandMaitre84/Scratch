@@ -1065,7 +1065,7 @@ function showTab(tab) {
     updateXP();
   }
   else if (tab === 'play') {
-    scratchImg.src = `images/${currentCard}.webp`;
+    setScratchImage(currentCard);
     checkDailyScratch();
     initScratch();
   }
