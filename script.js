@@ -388,16 +388,55 @@ badgeAnim.addEventListener('complete', () => {
 });
 
 
-// ─── Daily card logic ───────────────────────────────────────────
-const cards = Array.from({ length: 35 }, (_, i) => `card${i+1}`);
-let startDate = localStorage.getItem('startDate');
-const todayISO = new Date().toISOString().slice(0,10);
-if (!startDate) {
-  localStorage.setItem('startDate', todayISO);
-  startDate = todayISO;
+// ─── Daily card logic (séquentiel) ─────────────────────────────
+const cards = Array.from({ length: 36 }, (_, i) => `card${i+1}`); // 36 cartes
+
+function localISODate() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); // date locale stable
+  return d.toISOString().slice(0,10);
 }
-const daysElapsed = Math.floor((new Date(todayISO) - new Date(startDate)) / 86400000);
-const currentCard = cards[daysElapsed % cards.length];
+const todayISO = localISODate();
+
+const KEY_SEQ_IDX  = 'cards-seq-index'; // index courant (0-based)
+const KEY_SEQ_DATE = 'cards-seq-date';  // dernière date servie (YYYY-MM-DD)
+
+function getTodayCard() {
+  const today = todayISO;
+  let idx = parseInt(localStorage.getItem(KEY_SEQ_IDX) ?? '-1', 10);
+  const lastDate = localStorage.getItem(KEY_SEQ_DATE);
+
+  // nouveau jour => on avance d’une carte
+  if (lastDate !== today) {
+    idx = (idx + 1 + cards.length) % cards.length;
+    localStorage.setItem(KEY_SEQ_IDX, String(idx));
+    localStorage.setItem(KEY_SEQ_DATE, today);
+  }
+  return cards[Math.max(0, idx)];
+}
+
+const currentCard = getTodayCard();
+
+// ─── HOTFIX one-shot: demain = carte 36 ─────────────────────────
+(function enforceTomorrowCard36Once() {
+  const FLAG = '__migration_2025_08_09_tomorrow36_done__';
+  if (localStorage.getItem(FLAG)) return; // déjà appliqué sur cet appareil
+
+  function localISODate() {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0,10);
+  }
+
+  try {
+    localStorage.setItem('cards-seq-index', '34');         // 0-based -> card35
+    localStorage.setItem('cards-seq-date', localISODate()); // aujourd'hui
+    localStorage.setItem(FLAG, 'yes');                      // ne rejoue plus
+  } catch (e) {
+    // éviter crash si quota dépassé
+  }
+})();
+
 
 // ─── DOM refs ───────────────────────────────────────────────────
 const tabs      = {
