@@ -396,16 +396,18 @@ function localISODate() {
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().slice(0,10);
 }
-const todayISO = localISODate();
 
 const KEY_SEQ_IDX  = 'cards-seq-index';
 const KEY_SEQ_DATE = 'cards-seq-date';
 
 function getTodayCard() {
-  const today = todayISO;
+  // ⚠️ calcule la date au moment de l'appel (important si l'app reste ouverte)
+  const today = localISODate();
+
   let idx = parseInt(localStorage.getItem(KEY_SEQ_IDX) ?? '-1', 10);
   const lastDate = localStorage.getItem(KEY_SEQ_DATE);
 
+  // nouveau jour => on avance d’une carte
   if (lastDate !== today) {
     idx = (idx + 1 + cards.length) % cards.length;
     localStorage.setItem(KEY_SEQ_IDX, String(idx));
@@ -413,6 +415,7 @@ function getTodayCard() {
   }
   return cards[Math.max(0, idx)];
 }
+
 
 
 // ─── HOTFIX one-shot: demain = carte 36 ─────────────────────────
@@ -1114,8 +1117,10 @@ function initScratch() {
   ctx.lineCap   = 'round';
 }
 function checkDailyScratch() {
+  const today = localISODate(); // recalcul à chaque appel
   const last = localStorage.getItem('lastScratchDate');
-  if(last===todayISO){
+
+  if (last === today) {
     canvas.style.pointerEvents   = 'none';
     canvas.style.opacity         = '0.5';
     rewardBtn.style.display      = 'none';
@@ -1130,9 +1135,11 @@ function checkDailyScratch() {
     rewardTriggered              = false;
   }
 }
+
 window.addEventListener('resize', () => {
-  if(views.play.classList.contains('active')) initScratch();
+  if (views.play.classList.contains('active')) initScratch();
 });
+
 
 
 // ─── Utility to get pointer position ───────────────────────────
@@ -1187,39 +1194,43 @@ function checkClear() {
   const percent = (cleared / (canvas.width * canvas.height)) * 100;
 
   if (percent >= 65) {
-    // 2) On marque ce scratch comme fait aujourd’hui
-    localStorage.setItem('lastScratchDate', todayISO);
+    // 2) Marquer ce scratch comme fait aujourd’hui (date locale, mobile-safe)
+    localStorage.setItem('lastScratchDate', localISODate());
 
     // 3) Révéler entièrement l’image (faire disparaître l’overlay)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 4) Désactive le grattage et coupe le son
+    // 4) Désactiver le grattage et couper le son
     canvas.style.pointerEvents = 'none';
     stopScratchSfx();
 
-    // 5) Incrémente le compteur et met à jour le profil
+    // 5) Incrémenter le compteur et mettre à jour le profil
     const scratchCount = parseInt(localStorage.getItem('scratchCount') || '0', 10) + 1;
     localStorage.setItem('scratchCount', scratchCount.toString());
     updateProfileStats();
 
-    // 6) Ajoute 20 XP
+    // 6) +20 XP
     const xpNew = parseInt(localStorage.getItem('xpTotal') || '0', 10) + 20;
     localStorage.setItem('xpTotal', xpNew.toString());
     updateXP();
 
-    // 7) Teste dynamiquement la présence du badge du jour
+    // 7) Afficher IMMÉDIATEMENT le message (puis on le masquera si un badge existe)
+    scratchStatus.textContent   = 'NEXT SCRATCH TOMORROW';
+    scratchStatus.style.display = 'block';
+    rewardBtn.style.display     = 'none';
+    rewardTriggered             = false; // prêt au cas où
+
+    // 8) Tester dynamiquement la présence du badge du jour
+    const currentCard = getTodayCard(); // recalcul sûr (n'avance pas si même jour)
     const badgeImg = new Image();
     badgeImg.onload = () => {
-      // badge trouvé → on affiche REWARD
+      // badge trouvé → montrer REWARD et masquer le message
+      scratchStatus.style.display = 'none';
       rewardBtn.style.display     = 'block';
       rewardBtn.disabled          = false;
-      scratchStatus.style.display = 'none';
     };
     badgeImg.onerror = () => {
-      // pas de badge → on affiche directement le message
-      rewardBtn.style.display      = 'none';
-      scratchStatus.textContent    = 'NEXT SCRATCH TOMORROW';
-      scratchStatus.style.display  = 'block';
+      // pas de badge → on laisse le message affiché
     };
     badgeImg.src = `images/${currentCard.replace('card','badge')}.png`;
   }
@@ -1229,40 +1240,75 @@ function checkClear() {
 // ─── Reward handler ────────────────────────────────────────────
 rewardBtn.addEventListener('click', e => {
   e.preventDefault();
-  if(rewardTriggered) return;
+  if (rewardTriggered) return;
+
   rewardTriggered = true;
   rewardBtn.disabled = true;
-  playSfx('reward'); playSfx('badge');
+
+  playSfx('reward');
+  playSfx('badge');
+
+  // Révèle entièrement l’image
   ctx.globalCompositeOperation = 'source-out';
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  localStorage.setItem('lastScratchDate', todayISO);
-  const badgeId = currentCard.replace('card','badge');
-  const log = JSON.parse(localStorage.getItem('scratchLog')||'[]');
-  if(!log.includes(badgeId)) log.push(badgeId);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // ✅ Date du jour recalculée à l’appel (mobile-safe)
+  localStorage.setItem('lastScratchDate', localISODate());
+
+  // ✅ Recalcule la carte du jour ici (pas de variable globale)
+  const currentCard = getTodayCard();
+  const badgeId = currentCard.replace('card', 'badge');
+
+  const log = JSON.parse(localStorage.getItem('scratchLog') || '[]');
+  if (!log.includes(badgeId)) log.push(badgeId);
   localStorage.setItem('scratchLog', JSON.stringify(log));
+
+  // Animation badge + passage à l’onglet Badges
   badgeContainer.style.display = 'flex';
-  badgeAnim.goToAndPlay(0,true);
+  badgeAnim.goToAndPlay(0, true);
   showTab('badges');
 });
 
+
 // ─── Render badges ─────────────────────────────────────────────
 function renderBadges() {
-  badgesList.innerHTML='';
-  const won = JSON.parse(localStorage.getItem('scratchLog')||'[]');
-  for(let i=0;i<30;i++){
+  badgesList.innerHTML = '';
+
+  // Sécurise la lecture du log
+  let won = [];
+  try {
+    const raw = JSON.parse(localStorage.getItem('scratchLog') || '[]');
+    won = Array.isArray(raw) ? raw : [];
+  } catch {
+    won = [];
+  }
+
+  const totalSlots = cards.length; // s’adapte si tu changes le nombre de cartes
+
+  for (let i = 0; i < totalSlots; i++) {
+    const n = i + 1;
+
     const li = document.createElement('li');
     li.className = 'badge-slot';
+
     const num = document.createElement('span');
-    num.className='badge-slot-number'; num.textContent=i+1;
+    num.className = 'badge-slot-number';
+    num.textContent = n;
     li.appendChild(num);
-    if(won[i]){
+
+    // Affiche le iᵉ badge gagné (logique séquentielle : won[0] = badge1, won[1] = badge2, ...)
+    if (won[i]) {
       const img = document.createElement('img');
-      img.src=`images/${won[i]}.png`; img.alt=`Badge ${won[i]}`;
+      img.src = `images/${won[i]}.png`;
+      img.alt = `Badge ${won[i]}`;
+      img.loading = 'lazy';
       li.appendChild(img);
     }
+
     badgesList.appendChild(li);
   }
 }
+
 
 // ─── Service Worker & init ─────────────────────────────────────
 if('serviceWorker' in navigator){
