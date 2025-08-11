@@ -400,38 +400,39 @@ function localISODate() {
 const KEY_SEQ_IDX  = 'cards-seq-index';
 const KEY_SEQ_DATE = 'cards-seq-date';
 
-function getTodayCard() {
-  // ⚠️ calcule la date au moment de l'appel (important si l'app reste ouverte)
+/**
+ * ⚡ Initialisation sûre : démarre à card36 uniquement si l’utilisateur
+ * n’a pas encore d’index, ou s’il est avant 36. Ne réécrit PAS si déjà > 36.
+ * (s’exécute à chaque boot mais n’écrase pas la progression)
+ */
+(function initStartAt36() {
   const today = localISODate();
+  const raw   = localStorage.getItem(KEY_SEQ_IDX);
+  const idx   = parseInt(raw ?? '-1', 10);
 
-  let idx = parseInt(localStorage.getItem(KEY_SEQ_IDX) ?? '-1', 10);
+  if (isNaN(idx) || idx < 35) {
+    localStorage.setItem(KEY_SEQ_IDX, '35');     // 0-based → 35 = card36
+    localStorage.setItem(KEY_SEQ_DATE, today);   // “aujourd’hui” pour ne pas avancer de suite
+  }
+})();
+
+// index 0-based stocké en localStorage, retourne "card{n}" en progression infinie
+function getTodayCard() {
+  const today = localISODate(); // date live
+  let idx = parseInt(localStorage.getItem(KEY_SEQ_IDX) ?? '-1', 10); // -1 => avant card1
   const lastDate = localStorage.getItem(KEY_SEQ_DATE);
 
-  // nouveau jour => on avance d’une carte
+  // Nouveau jour → on avance d’une carte
   if (lastDate !== today) {
-    idx = (idx + 1 + cards.length) % cards.length;
+    idx = (isNaN(idx) ? -1 : idx) + 1; // progression infinie (pas de modulo)
     localStorage.setItem(KEY_SEQ_IDX, String(idx));
     localStorage.setItem(KEY_SEQ_DATE, today);
   }
-  return cards[Math.max(0, idx)];
+
+  const n = Math.max(1, idx + 1); // 1-based
+  return `card${n}`;
 }
 
-
-
-// ─── HOTFIX one-shot: demain = carte 36 ─────────────────────────
-(function enforceTomorrowCard36Once() {
-  const FLAG = '__migration_2025_08_09_tomorrow36_done__';
-  if (localStorage.getItem(FLAG)) return; // déjà appliqué sur cet appareil
-
-  try {
-    // Forcer aujourd’hui sur card35 → demain card36
-    localStorage.setItem(KEY_SEQ_IDX, '34'); // 0-based => card35
-    localStorage.setItem(KEY_SEQ_DATE, localISODate()); // aujourd'hui
-    localStorage.setItem(FLAG, 'yes');
-  } catch (e) {
-    // éviter crash si quota dépassé
-  }
-})();
 
 
 // ─── DOM refs ───────────────────────────────────────────────────
