@@ -400,26 +400,21 @@ function localISODate() {
 const KEY_SEQ_IDX  = 'cards-seq-index';
 const KEY_SEQ_DATE = 'cards-seq-date';
 
-/**
- * ⚡ Initialisation sûre : démarre à card36 uniquement si l’utilisateur
- * n’a pas encore d’index, ou s’il est avant 36. Ne réécrit PAS si déjà > 36.
- * (s’exécute à chaque boot mais n’écrase pas la progression)
- */
-(function initStartAt36() {
-  const today = localISODate();
-  const raw   = localStorage.getItem(KEY_SEQ_IDX);
-  const idx   = parseInt(raw ?? '-1', 10);
+// ⚡ One-shot: forcer la carte 51 aujourd’hui, puis +1/jour ensuite
+(function forceTodayCard51Once() {
+  const FLAG = '__force_card51_done__';
+  if (localStorage.getItem(FLAG)) return; // déjà appliqué sur cet appareil
 
-  if (isNaN(idx) || idx < 35) {
-    localStorage.setItem(KEY_SEQ_IDX, '35');     // 0-based → 35 = card36
-    localStorage.setItem(KEY_SEQ_DATE, today);   // “aujourd’hui” pour ne pas avancer de suite
-  }
+  const today = localISODate();
+  localStorage.setItem(KEY_SEQ_IDX, '50');   // 0-based → 50 = card51
+  localStorage.setItem(KEY_SEQ_DATE, today); // “aujourd’hui” → pas d’incrément
+  localStorage.setItem(FLAG, '1');
 })();
 
 // index 0-based stocké en localStorage, retourne "card{n}" en progression infinie
 function getTodayCard() {
   const today = localISODate(); // date live
-  let idx = parseInt(localStorage.getItem(KEY_SEQ_IDX) ?? '-1', 10); // -1 => avant card1
+  let idx = parseInt(localStorage.getItem(KEY_SEQ_IDX) ?? '-1', 10); // -1 → avant card1
   const lastDate = localStorage.getItem(KEY_SEQ_DATE);
 
   // Nouveau jour → on avance d’une carte
@@ -429,9 +424,10 @@ function getTodayCard() {
     localStorage.setItem(KEY_SEQ_DATE, today);
   }
 
-  const n = Math.max(1, idx + 1); // 1-based
+  const n = Math.max(1, idx + 1); // index 0-based → numéro humain
   return `card${n}`;
 }
+
 
 
 
