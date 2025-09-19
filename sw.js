@@ -1,8 +1,8 @@
-const CACHE_NAME = 'scratchmouse-v29';  // incrémente à chaque déploiement
+const CACHE_NAME = 'scratchmouse-v30';  // incrémente à chaque déploiement
 const ASSETS = [
   '/index.html',
-  '/style.css?v=0.3.7',
-  '/script.js?v=0.3.7',
+  '/style.css?v=0.3.8',
+  '/script.js?v=0.3.8',
   '/manifest.json',
   // icônes PWA
   '/images/icon-192.png',
@@ -68,6 +68,9 @@ const ASSETS = [
   '/images/card53.webp',
   '/images/card54.webp',
   '/images/card55.webp',
+  '/images/card56.webp',
+  '/images/card57.webp',
+  '/images/card58.webp',
   // badges en PNG
   '/images/badge1.png',
   '/images/badge4.png',
@@ -84,6 +87,7 @@ const ASSETS = [
   '/images/badge34.png',
   '/images/badge35.png',
   '/images/badge51.png',
+  '/images/badge56.png',
 ];
 
 // 1) Install : pré-cache et passe directement à la nouvelle version
