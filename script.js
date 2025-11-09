@@ -404,9 +404,10 @@ const KEY_SEQ_IDX  = 'cards-seq-index';
   const FLAG = '__force_card56_done__';
   if (localStorage.getItem(FLAG)) return;  // déjà appliqué
 
-  localStorage.setItem(KEY_SEQ_IDX, '55'); // 0-based → 55 = card56
+  localStorage.setItem(KEY_SEQ_IDX, '54'); // 0-based → 54 = card55
   localStorage.setItem(FLAG, '1');
 })();
+
 
 
 // Index 0-based en localStorage → renvoie "card{n}"
@@ -1168,9 +1169,20 @@ canvas.addEventListener('mouseleave', () => {
   }, { passive:false });
 });
 
+// ─── Utility: vérifier si un badge existe réellement ───────────────
+async function badgeExistsFor(cardId) {
+  const url = `images/${cardId.replace('card','badge')}.png`;
+  try {
+    const res = await fetch(url, { method: 'HEAD', cache: 'no-cache' });
+    const type = (res.headers.get('content-type') || '').toLowerCase();
+    return res.ok && type.startsWith('image/');
+  } catch {
+    return false;
+  }
+}
 
 // ─── Clear detection at 65% ─────────────────────────────────────
-function checkClear() {
+async function checkClear() {
   // 1) Calcul du pourcentage gratté
   const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
   let cleared = 0;
@@ -1200,22 +1212,17 @@ function checkClear() {
     localStorage.setItem('xpTotal', xpNew.toString());
     updateXP();
 
-    // 7) Badge éventuel pour la carte en cours
+    // 7) Badge éventuel pour la carte en cours (test HEAD fiable)
     const currentCard = getCurrentCard(); // ← la carte qu’on vient de gratter
-    const badgeImg = new Image();
-    badgeImg.onload = () => {
-      // badge trouvé → montrer REWARD et masquer le message
+    if (await badgeExistsFor(currentCard)) {
       scratchStatus.style.display = 'none';
       rewardBtn.style.display = 'block';
       rewardBtn.disabled = false;
-    };
-    badgeImg.onerror = () => {
-      // pas de badge → afficher le message
+    } else {
       scratchStatus.textContent = 'NEXT SCRATCH TOMORROW';
       scratchStatus.style.display = 'block';
       rewardBtn.style.display = 'none';
-    };
-    badgeImg.src = `images/${currentCard.replace('card','badge')}.png`;
+    }
 
     // 8) Avancer l’index de carte (anti-skip : on avance UNIQUEMENT après grattage)
     let seqIdx = parseInt(localStorage.getItem(KEY_SEQ_IDX) ?? '0', 10);
@@ -1223,6 +1230,7 @@ function checkClear() {
     localStorage.setItem(KEY_SEQ_IDX, String(seqIdx + 1));
   }
 }
+
 
 
 

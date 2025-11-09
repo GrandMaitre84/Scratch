@@ -1,8 +1,8 @@
-const CACHE_NAME = 'scratchmouse-v32';  // incrémente à chaque déploiement
+const CACHE_NAME = 'scratchmouse-v34';  // incrémente à chaque déploiement
 const ASSETS = [
   '/index.html',
-  '/style.css?v=0.4.0',
-  '/script.js?v=0.4.0',
+  '/style.css?v=0.4.2',
+  '/script.js?v=0.4.2',
   '/manifest.json',
   // icônes PWA
   '/images/icon-192.png',
