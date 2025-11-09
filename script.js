@@ -389,7 +389,7 @@ badgeAnim.addEventListener('complete', () => {
 
 
 // ─── Daily card logic (séquentiel) ─────────────────────────────
-const cards = Array.from({ length: 36 }, (_, i) => `card${i+1}`);
+const cards = Array.from({ length: 64 }, (_, i) => `card${i+1}`);
 
 function localISODate() {
   const d = new Date();
@@ -398,37 +398,26 @@ function localISODate() {
 }
 
 const KEY_SEQ_IDX  = 'cards-seq-index';
-const KEY_SEQ_DATE = 'cards-seq-date';
 
-// ⚡ One-shot: forcer la carte 51 aujourd’hui, puis +1/jour ensuite
-(function forceTodayCard51Once() {
-  const FLAG = '__force_card51_done__';
-  if (localStorage.getItem(FLAG)) return; // déjà appliqué sur cet appareil
+// (Optionnel) One-shot : démarrer à la carte 56 une seule fois
+(function forceStartAtCard56Once () {
+  const FLAG = '__force_card56_done__';
+  if (localStorage.getItem(FLAG)) return;  // déjà appliqué
 
-  const today = localISODate();
-  localStorage.setItem(KEY_SEQ_IDX, '50');   // 0-based → 50 = card51
-  localStorage.setItem(KEY_SEQ_DATE, today); // “aujourd’hui” → pas d’incrément
+  localStorage.setItem(KEY_SEQ_IDX, '55'); // 0-based → 55 = card56
   localStorage.setItem(FLAG, '1');
 })();
 
-// index 0-based stocké en localStorage, retourne "card{n}" en progression infinie
-function getTodayCard() {
-  const today = localISODate(); // date live
-  let idx = parseInt(localStorage.getItem(KEY_SEQ_IDX) ?? '-1', 10); // -1 → avant card1
-  const lastDate = localStorage.getItem(KEY_SEQ_DATE);
 
-  // Nouveau jour → on avance d’une carte
-  if (lastDate !== today) {
-    idx = (isNaN(idx) ? -1 : idx) + 1; // progression infinie (pas de modulo)
-    localStorage.setItem(KEY_SEQ_IDX, String(idx));
-    localStorage.setItem(KEY_SEQ_DATE, today);
-  }
-
-  const n = Math.max(1, idx + 1); // index 0-based → numéro humain
+// Index 0-based en localStorage → renvoie "card{n}"
+function getCurrentCard() {
+  let idx = parseInt(localStorage.getItem(KEY_SEQ_IDX) ?? '0', 10);
+  if (isNaN(idx) || idx < 0) idx = 0;
+  // Si tu as le tableau `cards`, tu peux aussi clamp :
+  // idx = Math.min(idx, cards.length - 1);
+  const n = idx + 1;
   return `card${n}`;
 }
-
-
 
 
 // ─── DOM refs ───────────────────────────────────────────────────
@@ -1058,7 +1047,7 @@ function showTab(tab) {
     updateXP();
   }
   else if (tab === 'play') {
-    const currentCard = getTodayCard(); // calcul dynamique
+    const currentCard = getCurrentCard(); // calcul dynamique
     scratchImg.src = `images/${currentCard}.webp`;
     checkDailyScratch();
     initScratch();
@@ -1211,27 +1200,30 @@ function checkClear() {
     localStorage.setItem('xpTotal', xpNew.toString());
     updateXP();
 
-    // 7) Afficher IMMÉDIATEMENT le message (puis on le masquera si un badge existe)
-    scratchStatus.textContent   = 'NEXT SCRATCH TOMORROW';
-    scratchStatus.style.display = 'block';
-    rewardBtn.style.display     = 'none';
-    rewardTriggered             = false; // prêt au cas où
-
-    // 8) Tester dynamiquement la présence du badge du jour
-    const currentCard = getTodayCard(); // recalcul sûr (n'avance pas si même jour)
+    // 7) Badge éventuel pour la carte en cours
+    const currentCard = getCurrentCard(); // ← la carte qu’on vient de gratter
     const badgeImg = new Image();
     badgeImg.onload = () => {
       // badge trouvé → montrer REWARD et masquer le message
       scratchStatus.style.display = 'none';
-      rewardBtn.style.display     = 'block';
-      rewardBtn.disabled          = false;
+      rewardBtn.style.display = 'block';
+      rewardBtn.disabled = false;
     };
     badgeImg.onerror = () => {
-      // pas de badge → on laisse le message affiché
+      // pas de badge → afficher le message
+      scratchStatus.textContent = 'NEXT SCRATCH TOMORROW';
+      scratchStatus.style.display = 'block';
+      rewardBtn.style.display = 'none';
     };
     badgeImg.src = `images/${currentCard.replace('card','badge')}.png`;
+
+    // 8) Avancer l’index de carte (anti-skip : on avance UNIQUEMENT après grattage)
+    let seqIdx = parseInt(localStorage.getItem(KEY_SEQ_IDX) ?? '0', 10);
+    if (isNaN(seqIdx) || seqIdx < 0) seqIdx = 0;
+    localStorage.setItem(KEY_SEQ_IDX, String(seqIdx + 1));
   }
 }
+
 
 
 // ─── Reward handler ────────────────────────────────────────────
@@ -1253,7 +1245,7 @@ rewardBtn.addEventListener('click', e => {
   localStorage.setItem('lastScratchDate', localISODate());
 
   // ✅ Recalcule la carte du jour ici (pas de variable globale)
-  const currentCard = getTodayCard();
+  const currentCard = getCurrentCard();
   const badgeId = currentCard.replace('card', 'badge');
 
   const log = JSON.parse(localStorage.getItem('scratchLog') || '[]');
